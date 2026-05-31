@@ -2,6 +2,18 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { createZernioClient } from "@/lib/zernio-client";
 import type { SequenceStep } from "@/lib/types/database";
 
+type ServiceClient = Awaited<ReturnType<typeof createServiceClient>>;
+type ClaimedEnrollment = {
+  id: string;
+  sequence_id: string;
+  contact_id: string;
+  channel_id: string;
+  current_step_index: number;
+  sequence_workspace_id: string;
+  sequence_steps: unknown;
+  sequence_status: string;
+};
+
 /**
  * Process all sequence enrollments that are due.
  * Called by the cron endpoint every 30-60 seconds.
@@ -9,14 +21,11 @@ import type { SequenceStep } from "@/lib/types/database";
 export async function processSequenceSteps() {
   const supabase = await createServiceClient();
 
-  // Atomically claim due enrollments so overlapping cron invocations do not
-  // send the same sequence step twice.
-  const { data: enrollments, error } = await supabase.rpc(
-    "claim_due_sequence_enrollments",
-    { batch_size: 50 }
+  const { enrollments, usesLocks, error } = await claimDueSequenceEnrollments(
+    supabase
   );
 
-  if (error || !enrollments) {
+  if (error) {
     console.error("Failed to fetch sequence enrollments:", error);
     return { processed: 0, failed: 0 };
   }
@@ -26,18 +35,17 @@ export async function processSequenceSteps() {
 
   for (const enrollment of enrollments) {
     try {
-      await processEnrollment(supabase, enrollment);
+      await processEnrollment(supabase, enrollment, usesLocks);
       processed++;
     } catch (err) {
       console.error(
         `Failed to process enrollment ${enrollment.id}:`,
         err instanceof Error ? err.message : err
       );
-      await supabase
-        .from("sequence_enrollments")
-        .update({ status: "active", locked_at: null })
-        .eq("id", enrollment.id)
-        .eq("status", "processing");
+      await supabase.from("sequence_enrollments").update({
+        status: "active",
+        ...(usesLocks ? { locked_at: null } : {}),
+      }).eq("id", enrollment.id).eq("status", "processing");
       failed++;
     }
   }
@@ -45,25 +53,97 @@ export async function processSequenceSteps() {
   return { processed, failed, total: enrollments.length };
 }
 
-async function processEnrollment(
-  supabase: Awaited<ReturnType<typeof createServiceClient>>,
-  enrollment: {
-    id: string;
-    sequence_id: string;
-    contact_id: string;
-    channel_id: string;
-    current_step_index: number;
-    sequence_workspace_id: string;
-    sequence_steps: unknown;
-    sequence_status: string;
+async function claimDueSequenceEnrollments(
+  supabase: ServiceClient
+): Promise<{
+  enrollments: ClaimedEnrollment[];
+  usesLocks: boolean;
+  error: unknown;
+}> {
+  const { data, error } = await supabase.rpc(
+    "claim_due_sequence_enrollments",
+    { batch_size: 50 }
+  );
+
+  if (!error && data) {
+    return { enrollments: data, usesLocks: true, error: null };
   }
+
+  if (!isMissingRpcError(error)) {
+    return { enrollments: [], usesLocks: true, error };
+  }
+
+  console.warn(
+    "claim_due_sequence_enrollments RPC is missing; falling back to legacy enrollment claim"
+  );
+
+  const { data: dueEnrollments, error: fallbackError } = await supabase
+    .from("sequence_enrollments")
+    .select(
+      "id, sequence_id, contact_id, channel_id, current_step_index, sequences!inner(workspace_id, steps, status)"
+    )
+    .eq("status", "active")
+    .lte("next_step_at", new Date().toISOString())
+    .order("next_step_at", { ascending: true })
+    .limit(50);
+
+  if (fallbackError || !dueEnrollments) {
+    return { enrollments: [], usesLocks: false, error: fallbackError };
+  }
+
+  const claimed: ClaimedEnrollment[] = [];
+
+  for (const enrollment of dueEnrollments) {
+    const { data: updated, error: updateError } = await supabase
+      .from("sequence_enrollments")
+      .update({ status: "processing" })
+      .eq("id", enrollment.id)
+      .eq("status", "active")
+      .select("id")
+      .maybeSingle();
+
+    if (updateError) {
+      return { enrollments: claimed, usesLocks: false, error: updateError };
+    }
+
+    if (updated) {
+      const sequence = Array.isArray(enrollment.sequences)
+        ? enrollment.sequences[0]
+        : enrollment.sequences;
+
+      claimed.push({
+        id: enrollment.id,
+        sequence_id: enrollment.sequence_id,
+        contact_id: enrollment.contact_id,
+        channel_id: enrollment.channel_id,
+        current_step_index: enrollment.current_step_index,
+        sequence_workspace_id: sequence.workspace_id,
+        sequence_steps: sequence.steps,
+        sequence_status: sequence.status,
+      });
+    }
+  }
+
+  return { enrollments: claimed, usesLocks: false, error: null };
+}
+
+function isMissingRpcError(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const { code, message } = error as { code?: string; message?: string };
+  return code === "PGRST202" || message?.includes("Could not find the function");
+}
+
+async function processEnrollment(
+  supabase: ServiceClient,
+  enrollment: ClaimedEnrollment,
+  usesLocks: boolean
 ) {
   if (enrollment.sequence_status !== "active") {
     // Sequence was paused/deleted, cancel enrollment
-    await supabase
-      .from("sequence_enrollments")
-      .update({ status: "cancelled", locked_at: null })
-      .eq("id", enrollment.id);
+    await supabase.from("sequence_enrollments").update({
+      status: "cancelled",
+      ...(usesLocks ? { locked_at: null } : {}),
+    }).eq("id", enrollment.id);
     return;
   }
 
@@ -77,7 +157,7 @@ async function processEnrollment(
       .update({
         status: "completed",
         completed_at: new Date().toISOString(),
-        locked_at: null,
+        ...(usesLocks ? { locked_at: null } : {}),
       })
       .eq("id", enrollment.id);
     return;
@@ -108,7 +188,7 @@ async function processEnrollment(
         status: "completed",
         completed_at: new Date().toISOString(),
         next_step_at: null,
-        locked_at: null,
+        ...(usesLocks ? { locked_at: null } : {}),
       })
       .eq("id", enrollment.id);
     return;
@@ -133,7 +213,7 @@ async function processEnrollment(
       current_step_index: nextIndex,
       status: "active",
       next_step_at: nextStepAt,
-      locked_at: null,
+      ...(usesLocks ? { locked_at: null } : {}),
     })
     .eq("id", enrollment.id);
 }

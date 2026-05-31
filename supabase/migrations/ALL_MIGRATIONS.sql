@@ -530,3 +530,127 @@ create policy "flow_versions_insert" on flow_versions for insert
     where f.id = flow_versions.flow_id
       and wm.user_id = auth.uid()
   ));
+
+-- ============================================================
+-- MIGRATION 14: ATOMIC SCHEDULER CLAIMS
+-- ============================================================
+
+alter table scheduled_jobs
+  add column if not exists locked_at timestamptz;
+
+alter table sequence_enrollments
+  add column if not exists locked_at timestamptz;
+
+drop index if exists idx_scheduled_jobs_pending;
+create index if not exists idx_scheduled_jobs_due
+  on scheduled_jobs(run_at, locked_at)
+  where status in ('pending', 'processing');
+
+create index if not exists idx_sequence_enrollments_due
+  on sequence_enrollments(next_step_at, locked_at)
+  where status in ('active', 'processing');
+
+create or replace function claim_due_scheduled_jobs(batch_size integer default 20)
+returns setof scheduled_jobs
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  update scheduled_jobs
+  set status = 'failed',
+      last_error = coalesce(last_error, 'Timed out while processing')
+  where status = 'processing'
+    and locked_at < now() - interval '10 minutes'
+    and attempts >= 3;
+
+  return query
+  with due as (
+    select id
+    from scheduled_jobs
+    where (
+        status = 'pending'
+        and run_at <= now()
+      )
+      or (
+        status = 'processing'
+        and locked_at < now() - interval '10 minutes'
+        and attempts < 3
+      )
+    order by run_at asc
+    limit batch_size
+    for update skip locked
+  )
+  update scheduled_jobs sj
+  set status = 'processing',
+      attempts = sj.attempts + 1,
+      locked_at = now()
+  from due
+  where sj.id = due.id
+  returning sj.*;
+end;
+$$;
+
+create or replace function claim_due_sequence_enrollments(batch_size integer default 50)
+returns table (
+  id uuid,
+  sequence_id uuid,
+  contact_id uuid,
+  channel_id uuid,
+  current_step_index integer,
+  status text,
+  enrolled_at timestamptz,
+  next_step_at timestamptz,
+  completed_at timestamptz,
+  locked_at timestamptz,
+  sequence_workspace_id uuid,
+  sequence_steps jsonb,
+  sequence_status text
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  return query
+  with due as (
+    select se.id
+    from sequence_enrollments se
+    where (
+        se.status = 'active'
+        and se.next_step_at <= now()
+      )
+      or (
+        se.status = 'processing'
+        and se.locked_at < now() - interval '10 minutes'
+      )
+    order by se.next_step_at asc
+    limit batch_size
+    for update of se skip locked
+  ),
+  claimed as (
+    update sequence_enrollments se
+    set status = 'processing',
+        locked_at = now()
+    from due
+    where se.id = due.id
+    returning se.*
+  )
+  select
+    c.id,
+    c.sequence_id,
+    c.contact_id,
+    c.channel_id,
+    c.current_step_index,
+    c.status,
+    c.enrolled_at,
+    c.next_step_at,
+    c.completed_at,
+    c.locked_at,
+    s.workspace_id as sequence_workspace_id,
+    s.steps as sequence_steps,
+    s.status as sequence_status
+  from claimed c
+  join sequences s on s.id = c.sequence_id;
+end;
+$$;

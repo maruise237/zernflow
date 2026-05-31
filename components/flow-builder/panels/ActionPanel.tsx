@@ -25,6 +25,8 @@ interface ActionPanelData {
   timeoutUnit?: string;
   confirmed?: boolean;
   sequenceId?: string;
+  text?: string;
+  imageUrl?: string;
   [key: string]: unknown;
 }
 
@@ -57,6 +59,9 @@ export function ActionPanel({ data: rawData, onChange }: ActionPanelProps) {
       return <SubscribeConfig data={data} onChange={onChange} />;
     case "humanTakeover":
       return <HumanTakeoverConfig data={data} onChange={onChange} />;
+    case "commentReply":
+    case "privateReply":
+      return <ReplyConfig data={data} onChange={onChange} />;
     case "abSplit":
       return <ABSplitConfig data={data} onChange={onChange} />;
     case "smartDelay":
@@ -73,6 +78,56 @@ export function ActionPanel({ data: rawData, onChange }: ActionPanelProps) {
 }
 
 /* ───────── Tag Config ───────── */
+function ReplyConfig({ data, onChange }: ActionSubPanelProps) {
+  const isPrivate = data.actionType === "privateReply";
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg border border-border bg-muted p-4">
+        <p className="text-sm font-medium text-foreground">
+          {isPrivate ? "Private DM Reply" : "Public Comment Reply"}
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {isPrivate
+            ? "Send a DM to the person who commented on the post."
+            : "Reply publicly under the comment that triggered this flow."}
+        </p>
+      </div>
+
+      <div>
+        <label className="mb-2 block text-xs font-semibold text-foreground">
+          Message
+        </label>
+        <textarea
+          value={data.text || ""}
+          onChange={(e) => onChange({ ...data, text: e.target.value })}
+          placeholder="Write the reply..."
+          rows={5}
+          className="w-full resize-none rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
+        />
+        <p className="mt-1.5 text-xs text-muted-foreground">
+          Supports variables like {"{{name}}"}.
+        </p>
+      </div>
+
+      {isPrivate && (
+        <div>
+          <label className="mb-2 block text-xs font-semibold text-foreground">
+            Optional image URL
+          </label>
+          <input
+            type="url"
+            value={data.imageUrl || ""}
+            onChange={(e) => onChange({ ...data, imageUrl: e.target.value })}
+            placeholder="https://..."
+            className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TagConfig({ data, onChange }: ActionSubPanelProps) {
   const isAdd = data.actionType === "addTag";
 

@@ -115,7 +115,7 @@ export function NodeConfigSidebar({ node, onChange, onClose, onDelete }: NodeCon
   return (
     <div
       className={cn(
-        "flex w-80 flex-col border-l bg-card",
+        "fixed inset-y-0 right-0 z-40 flex w-[min(20rem,calc(100vw-1rem))] flex-col border-l bg-card shadow-xl md:relative md:inset-auto md:z-auto md:w-80 md:shadow-none",
         config.borderColor
       )}
       style={{ borderLeftWidth: "3px" }}

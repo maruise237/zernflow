@@ -162,13 +162,14 @@ export function MessageThread({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Listen for conversation updates (last_message_at changes when a new message arrives)
-  // and re-fetch messages from Zernio API.
+  // Listen for conversation updates AND new message inserts for real-time updates
   useEffect(() => {
     if (!conversation) return;
 
     const supabase = createClient();
-    const channel = supabase
+
+    // Subscribe to conversation updates (e.g., status changes, last_message_at)
+    const conversationChannel = supabase
       .channel(`conversation-${conversation.id}`)
       .on(
         "postgres_changes",
@@ -197,8 +198,31 @@ export function MessageThread({
       )
       .subscribe();
 
+    // Subscribe to new message inserts for immediate display
+    const messageChannel = supabase
+      .channel(`messages-${conversation.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `conversation_id=eq.${conversation.id}`,
+        },
+        async (payload) => {
+          const newMessage = payload.new as Message;
+          setMessages((prev) => {
+            // Avoid duplicates (optimistic messages or already received)
+            if (prev.some((m) => m.id === newMessage.id)) return prev;
+            return [...prev, newMessage];
+          });
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(conversationChannel);
+      supabase.removeChannel(messageChannel);
     };
   }, [conversation?.id]);
 

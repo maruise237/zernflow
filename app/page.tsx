@@ -253,7 +253,7 @@ export default function Home() {
               {
                 icon: MessageCircle,
                 title: "Comment-to-DM",
-                desc: "Someone comments a keyword? Instantly DM them your link, offer, or lead magnet.",
+                desc: "Someone comments a keyword? Instantly DM them your link, offer, or gated resource.",
               },
               {
                 icon: GitBranch,
@@ -413,7 +413,7 @@ export default function Home() {
               {
                 icon: Heart,
                 title: "Creators",
-                desc: "Auto-reply to comments, send lead magnets via DM, and grow your email list from social.",
+                desc: "Auto-reply to comments, send gated resources via DM, and grow your email list from social.",
               },
               {
                 icon: TrendingUp,

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import type { Database } from "@/lib/types/database";
 
 async function getWorkspaceId(supabase: Awaited<ReturnType<typeof createClient>>) {
   const {
@@ -52,7 +53,7 @@ export async function PUT(
 
   const body = await request.json();
 
-  const update: Record<string, unknown> = {};
+  const update: Database["public"]["Tables"]["flows"]["Update"] = {};
   if (body.name !== undefined) update.name = body.name;
   if (body.description !== undefined) update.description = body.description;
   if (body.nodes !== undefined) update.nodes = body.nodes;

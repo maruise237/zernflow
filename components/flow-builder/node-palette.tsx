@@ -123,6 +123,20 @@ const categories: PaletteCategory[] = [
       },
       {
         type: "action",
+        nodeType: "commentReply",
+        label: "Comment Reply",
+        icon: MessageSquare,
+        actionType: "commentReply",
+      },
+      {
+        type: "action",
+        nodeType: "privateReply",
+        label: "Private Reply",
+        icon: MessageSquare,
+        actionType: "privateReply",
+      },
+      {
+        type: "action",
         nodeType: "subscribe",
         label: "Subscribe",
         icon: Bell,
@@ -158,7 +172,7 @@ function onDragStart(event: DragEvent, item: PaletteItem) {
 
 export function NodePalette() {
   return (
-    <div className="flex w-56 flex-col border-r border-border bg-card">
+    <div className="hidden w-56 shrink-0 flex-col border-r border-border bg-card md:flex">
       <div className="border-b border-border px-4 py-3">
         <h2 className="text-sm font-semibold">Nodes</h2>
         <p className="text-xs text-muted-foreground">Drag to canvas</p>

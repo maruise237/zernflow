@@ -29,6 +29,7 @@ export interface ActionNodeProps {
   paths?: Array<{ name: string; weight: number }>;
   timeout?: number;
   timeoutUnit?: string;
+  text?: string;
 }
 
 const actionConfig: Record<
@@ -122,6 +123,9 @@ function getSummary(nodeData: ActionNodeProps): string | null {
       return "Subscribe contact";
     case "unsubscribe":
       return "Unsubscribe contact";
+    case "commentReply":
+    case "privateReply":
+      return nodeData.text || null;
     case "abSplit":
       if (nodeData.paths && nodeData.paths.length > 0) {
         return nodeData.paths.map((p) => `${p.name}: ${p.weight}%`).join(", ");

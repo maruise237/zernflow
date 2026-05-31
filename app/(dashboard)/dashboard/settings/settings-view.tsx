@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   Settings,
   Key,
@@ -17,6 +18,7 @@ import {
   Users,
   ChevronRight,
   Sparkles,
+  Globe,
 } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -40,6 +42,7 @@ export function SettingsView({
 }: {
   workspace: WorkspaceSettings;
 }) {
+  const t = useTranslations("Settings");
   const [name, setName] = useState(workspace.name);
   const [apiKey, setApiKey] = useState("");
   const [showApiKey, setShowApiKey] = useState(false);
@@ -119,7 +122,12 @@ export function SettingsView({
     try {
       const supabase = createClient();
 
-      const update: Record<string, unknown> = {
+      const update: {
+        name: string;
+        global_keywords: string[];
+        late_api_key_encrypted?: string;
+        ai_api_key?: string;
+      } = {
         name: name.trim(),
         global_keywords: keywords,
       };
@@ -186,6 +194,41 @@ export function SettingsView({
                 onChange={(e) => setName(e.target.value)}
                 className="mt-1.5 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               />
+            </div>
+          </section>
+
+          <hr className="border-border" />
+
+          {/* Language Selector */}
+          <section>
+            <div className="flex items-center gap-2">
+              <Globe className="h-4 w-4 text-muted-foreground" />
+              <h2 className="text-sm font-semibold">{t("Language")}</h2>
+            </div>
+            <div className="mt-4">
+              <label className="text-xs font-medium text-muted-foreground">
+                {t("SelectLanguage")}
+              </label>
+              <div className="mt-1.5 flex gap-2">
+                <button
+                  onClick={() => {
+                    document.cookie = "NEXT_LOCALE=en; path=/; max-age=31536000";
+                    window.location.reload();
+                  }}
+                  className="rounded-lg border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-muted"
+                >
+                  {t("English")}
+                </button>
+                <button
+                  onClick={() => {
+                    document.cookie = "NEXT_LOCALE=fr; path=/; max-age=31536000";
+                    window.location.reload();
+                  }}
+                  className="rounded-lg border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-muted"
+                >
+                  {t("French")}
+                </button>
+              </div>
             </div>
           </section>
 

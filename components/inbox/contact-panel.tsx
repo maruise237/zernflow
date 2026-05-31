@@ -62,50 +62,62 @@ export function ContactPanel({
 
     async function loadContact() {
       setLoading(true);
-      const supabase = createClient();
+      try {
+        const supabase = createClient();
 
-      const [contactRes, tagsRes, fieldsRes, channelsRes] = await Promise.all([
-        supabase.from("contacts").select("*").eq("id", contactId!).single(),
-        supabase
-          .from("contact_tags")
-          .select("tag_id, tags(*)")
-          .eq("contact_id", contactId!),
-        supabase
-          .from("contact_custom_fields")
-          .select("*, custom_field_definitions(*)")
-          .eq("contact_id", contactId!),
-        supabase
-          .from("contact_channels")
-          .select("platform_username, channels(platform)")
-          .eq("contact_id", contactId!),
-      ]);
+        const [contactRes, tagsRes, fieldsRes, channelsRes] = await Promise.all([
+          supabase.from("contacts").select("*").eq("id", contactId!).single(),
+          supabase
+            .from("contact_tags")
+            .select("tag_id, tags(*)")
+            .eq("contact_id", contactId!),
+          supabase
+            .from("contact_custom_fields")
+            .select("*, custom_field_definitions(*)")
+            .eq("contact_id", contactId!),
+          supabase
+            .from("contact_channels")
+            .select("platform_username, channels(platform)")
+            .eq("contact_id", contactId!),
+        ]);
 
-      if (contactRes.data) {
-        const tags = (tagsRes.data ?? [])
-          .map((ct) => ct.tags)
-          .filter(Boolean) as TagRow[];
+        if (contactRes.error) {
+          console.error("Failed to load contact:", contactRes.error);
+          setDetails(null);
+          setLoading(false);
+          return;
+        }
 
-        const customFields = (fieldsRes.data ?? [])
-          .map((cf) => ({
-            definition: cf.custom_field_definitions as unknown as CustomFieldDef,
-            value: cf.value,
-          }))
-          .filter((cf) => cf.definition);
+        if (contactRes.data) {
+          const tags = (tagsRes.data ?? [])
+            .map((ct) => ct.tags)
+            .filter(Boolean) as TagRow[];
 
-        const channels = (channelsRes.data ?? []).map((cc) => ({
-          platform: (cc.channels as unknown as { platform: Platform }).platform,
-          platform_username: cc.platform_username,
-        }));
+          const customFields = (fieldsRes.data ?? [])
+            .map((cf) => ({
+              definition: cf.custom_field_definitions as unknown as CustomFieldDef,
+              value: cf.value,
+            }))
+            .filter((cf) => cf.definition);
 
-        setDetails({
-          contact: contactRes.data,
-          tags,
-          customFields,
-          channels,
-        });
+          const channels = (channelsRes.data ?? []).map((cc) => ({
+            platform: (cc.channels as unknown as { platform: Platform }).platform,
+            platform_username: cc.platform_username,
+          }));
+
+          setDetails({
+            contact: contactRes.data,
+            tags,
+            customFields,
+            channels,
+          });
+        }
+      } catch (err) {
+        console.error("Failed to load contact details:", err);
+        setDetails(null);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     }
 
     loadContact();

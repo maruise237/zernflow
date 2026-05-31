@@ -303,7 +303,7 @@ export function TestPanel({
   }
 
   return (
-    <div className="flex w-80 flex-col border-l border-border bg-card">
+    <div className="fixed inset-y-0 right-0 z-40 flex w-[min(20rem,calc(100vw-1rem))] flex-col border-l border-border bg-card shadow-xl md:relative md:inset-auto md:z-auto md:w-80 md:shadow-none">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <div className="flex items-center gap-2">

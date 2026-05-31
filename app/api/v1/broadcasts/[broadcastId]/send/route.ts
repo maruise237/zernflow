@@ -256,39 +256,50 @@ async function evaluateRule(
 
   switch (rule.field) {
     case "has_tag": {
-      // Find tag by name
-      const { data: tag } = await supabase
-        .from("tags")
-        .select("id")
-        .eq("workspace_id", workspaceId)
-        .eq("name", rule.value)
-        .single();
+      // The SegmentBuilder stores tag ID as the value — look up by ID first, then fall back to name
+      let tagId = rule.value;
 
-      if (!tag) return new Set();
+      // Check if the value looks like a UUID; if not, look up by name
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rule.value);
+      if (!isUuid) {
+        const { data: tagByName } = await supabase
+          .from("tags")
+          .select("id")
+          .eq("workspace_id", workspaceId)
+          .eq("name", rule.value)
+          .single();
+        if (!tagByName) return new Set();
+        tagId = tagByName.id;
+      }
 
       const { data: tagged } = await supabase
         .from("contact_tags")
         .select("contact_id")
-        .eq("tag_id", tag.id)
+        .eq("tag_id", tagId)
         .in("contact_id", contactIds);
 
       return new Set((tagged ?? []).map((t) => t.contact_id));
     }
 
     case "missing_tag": {
-      const { data: tag } = await supabase
-        .from("tags")
-        .select("id")
-        .eq("workspace_id", workspaceId)
-        .eq("name", rule.value)
-        .single();
-
-      if (!tag) return new Set(contactIds); // Tag doesn't exist, all contacts "miss" it
+      // Same logic: support both UUID and name
+      let tagId = rule.value;
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rule.value);
+      if (!isUuid) {
+        const { data: tagByName } = await supabase
+          .from("tags")
+          .select("id")
+          .eq("workspace_id", workspaceId)
+          .eq("name", rule.value)
+          .single();
+        if (!tagByName) return new Set(contactIds); // Tag doesn't exist, all contacts "miss" it
+        tagId = tagByName.id;
+      }
 
       const { data: tagged } = await supabase
         .from("contact_tags")
         .select("contact_id")
-        .eq("tag_id", tag.id)
+        .eq("tag_id", tagId)
         .in("contact_id", contactIds);
 
       const taggedSet = new Set((tagged ?? []).map((t) => t.contact_id));
@@ -347,9 +358,9 @@ async function evaluateRule(
     }
 
     case "custom_field": {
-      // rule.value format: "field_slug:actual_value"
-      const [slug, ...rest] = rule.value.split(":");
-      const fieldValue = rest.join(":");
+      // rule.value format: "field_slug::actual_value" (double colon separator from SegmentBuilder)
+      const [slug, ...rest] = rule.value.split("::");
+      const fieldValue = rest.join("::");
 
       const { data: fieldDef } = await supabase
         .from("custom_field_definitions")

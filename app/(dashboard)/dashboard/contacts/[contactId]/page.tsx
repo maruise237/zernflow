@@ -49,7 +49,7 @@ export default async function ContactDetailPage({
   const channels = channelsRes.data ?? [];
   const conversations = conversationsRes.data ?? [];
   const customFields = customFieldsRes.data ?? [];
-  const tags = contact.contact_tags
+  const tags = (contact.contact_tags ?? [])
     .map((ct: { tags: unknown }) => ct.tags)
     .filter(Boolean) as { id: string; name: string; color: string | null }[];
 
@@ -75,7 +75,7 @@ export default async function ContactDetailPage({
           <ArrowLeft className="h-3.5 w-3.5" />
           Back to contacts
         </Link>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-muted text-lg font-semibold">
             {contact.avatar_url ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -92,7 +92,7 @@ export default async function ContactDetailPage({
             <h1 className="text-xl font-bold">
               {contact.display_name ?? "Unknown"}
             </h1>
-            <div className="mt-0.5 flex items-center gap-3 text-sm text-muted-foreground">
+            <div className="mt-0.5 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
               {contact.email && (
                 <span className="flex items-center gap-1">
                   <Mail className="h-3 w-3" />

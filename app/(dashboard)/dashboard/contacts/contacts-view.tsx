@@ -89,7 +89,7 @@ export function ContactsView({
     <div className="flex h-full flex-col">
       {/* Header */}
       <div className="border-b border-border px-8 py-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold">Contacts</h1>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -99,8 +99,8 @@ export function ContactsView({
         </div>
 
         {/* Search and filters */}
-        <div className="mt-4 flex items-center gap-3">
-          <div className="relative flex-1 max-w-sm">
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative w-full max-w-sm sm:flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"

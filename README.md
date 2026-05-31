@@ -77,7 +77,19 @@ After starting the app, go to **Settings** to enter your Zernio API key and (opt
 
 ### Dokploy scheduled jobs
 
-If you deploy with Dokploy, `vercel.json` cron entries are not used. Configure two Dokploy Application Jobs after deployment:
+If you deploy with Dokploy, `vercel.json` cron entries are not used. ZernFlow starts an internal cron runner automatically when `CRON_SECRET` is set and the app is not running on Vercel.
+
+Set these variables in Dokploy:
+
+```env
+CRON_SECRET=your-strong-secret
+NEXT_PUBLIC_APP_URL=https://your-zernflow-domain.com
+CRON_BASE_URL=https://your-zernflow-domain.com
+```
+
+The internal runner calls the job and sequence processors every minute. To disable it, set `DISABLE_INTERNAL_CRON=true`.
+
+As a manual fallback, you can still configure two Dokploy Application Jobs:
 
 ```bash
 npm run cron:jobs

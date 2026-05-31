@@ -220,7 +220,7 @@ function FlowCanvasInner({ flow }: FlowCanvasProps) {
 
         if (error) {
           console.error("Failed to save flow:", error);
-          setSaveError("Failed to save");
+          setSaveError("Échec de l'enregistrement");
           setTimeout(() => setSaveError(null), 3000);
           return;
         }
@@ -247,7 +247,7 @@ function FlowCanvasInner({ flow }: FlowCanvasProps) {
 
       if (error) {
         console.error("Failed to delete flow:", error);
-        setSaveError("Failed to delete flow");
+        setSaveError("Impossible de supprimer le flux");
         setTimeout(() => setSaveError(null), 3000);
         setDeleteModalOpen(false);
         return;
@@ -257,7 +257,7 @@ function FlowCanvasInner({ flow }: FlowCanvasProps) {
       router.refresh();
     } catch (err) {
       console.error("Delete error:", err);
-      setSaveError("An error occurred");
+      setSaveError("Une erreur est survenue");
       setTimeout(() => setSaveError(null), 3000);
     } finally {
       setDeleting(false);
@@ -276,7 +276,7 @@ function FlowCanvasInner({ flow }: FlowCanvasProps) {
       });
       if (!res.ok) {
         console.error("Failed to publish flow");
-        setSaveError("Failed to publish");
+        setSaveError("Impossible de publier");
         setTimeout(() => setSaveError(null), 3000);
         return;
       }
@@ -305,12 +305,12 @@ function FlowCanvasInner({ flow }: FlowCanvasProps) {
                 <AlertTriangle className="h-5 w-5 text-destructive" />
               </div>
               <div className="flex-1">
-                <h2 className="text-base font-semibold">Delete this flow?</h2>
+                <h2 className="text-base font-semibold">Supprimer ce flux ?</h2>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  You are about to permanently delete{" "}
+                  Vous êtes sur le point de supprimer définitivement{" "}
                   <span className="font-semibold text-foreground">&ldquo;{flowName}&rdquo;</span>.
-                  This action is <span className="font-semibold text-destructive">irreversible</span>{" "}
-                  and all nodes, edges, and version history will be lost.
+                  Cette action est <span className="font-semibold text-destructive">irréversible</span>{" "}
+                  et tous les blocs, connexions et versions seront perdus.
                 </p>
               </div>
             </div>
@@ -320,7 +320,7 @@ function FlowCanvasInner({ flow }: FlowCanvasProps) {
                 disabled={deleting}
                 className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-accent transition-colors disabled:opacity-50"
               >
-                Cancel
+                Annuler
               </button>
               <button
                 onClick={handleDeleteFlow}
@@ -330,12 +330,12 @@ function FlowCanvasInner({ flow }: FlowCanvasProps) {
                 {deleting ? (
                   <>
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    Deleting…
+                    Suppression...
                   </>
                 ) : (
                   <>
                     <Trash2 className="h-3.5 w-3.5" />
-                    Delete Flow
+                    Supprimer le flux
                   </>
                 )}
               </button>
@@ -351,7 +351,7 @@ function FlowCanvasInner({ flow }: FlowCanvasProps) {
             className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back
+            Retour
           </button>
           <div className="h-5 w-px bg-border" />
           <input
@@ -360,7 +360,7 @@ function FlowCanvasInner({ flow }: FlowCanvasProps) {
             onChange={(e) => setFlowName(e.target.value)}
             className="min-w-0 max-w-[12rem] border-none bg-transparent text-sm font-semibold outline-none focus:ring-0 sm:max-w-[200px]"
             style={{ width: `${Math.max(flowName.length, 8)}ch` }}
-            placeholder="Flow name"
+            placeholder="Nom du flux"
           />
           <span
             className={cn(
@@ -372,17 +372,17 @@ function FlowCanvasInner({ flow }: FlowCanvasProps) {
                   : "bg-muted text-muted-foreground"
             )}
           >
-            {flow.status}
+            {flow.status === "published" ? "publié" : flow.status === "archived" ? "archivé" : "brouillon"}
           </span>
         </div>
         <div className="flex min-w-0 items-center gap-2 overflow-x-auto pb-1 lg:justify-end lg:pb-0">
             <button
               onClick={() => setDeleteModalOpen(true)}
-              title="Delete this flow"
+              title="Supprimer ce flux"
               className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-1.5 text-sm font-medium text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
             >
               <Trash2 className="h-3.5 w-3.5" />
-              Delete
+              Supprimer
             </button>
           {saveError && (
             <span className="text-xs font-medium text-destructive">
@@ -391,7 +391,7 @@ function FlowCanvasInner({ flow }: FlowCanvasProps) {
           )}
           {!saveError && lastSaved && (
             <span className="text-xs text-muted-foreground">
-              Saved {lastSaved.toLocaleTimeString()}
+              Enregistré à {lastSaved.toLocaleTimeString("fr-FR")}
             </span>
           )}
           <button
@@ -410,7 +410,7 @@ function FlowCanvasInner({ flow }: FlowCanvasProps) {
             )}
           >
             <Play className="h-3.5 w-3.5" />
-            Test
+            Tester
           </button>
           <button
             onClick={() => {
@@ -428,7 +428,7 @@ function FlowCanvasInner({ flow }: FlowCanvasProps) {
             )}
           >
             <History className="h-3.5 w-3.5" />
-            History
+            Historique
           </button>
           <button
             onClick={handleSave}
@@ -440,7 +440,7 @@ function FlowCanvasInner({ flow }: FlowCanvasProps) {
             ) : (
               <Save className="h-3.5 w-3.5" />
             )}
-            Save
+            Enregistrer
           </button>
           <button
             onClick={handlePublish}
@@ -452,7 +452,7 @@ function FlowCanvasInner({ flow }: FlowCanvasProps) {
             ) : (
               <Rocket className="h-3.5 w-3.5" />
             )}
-            Publish
+            Publier
           </button>
         </div>
       </div>

@@ -9,11 +9,11 @@ export async function POST(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
 
   const body = await request.json();
   const name = String(body.name || "").trim();
-  if (!name) return NextResponse.json({ error: "Name is required" }, { status: 400 });
+  if (!name) return NextResponse.json({ error: "Le nom est requis" }, { status: 400 });
 
   const slug = name
     .toLowerCase()
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
 
   if (error || !workspace) {
     return NextResponse.json(
-      { error: error?.message || "Failed to create workspace" },
+      { error: error?.message || "Impossible de créer l'espace de travail" },
       { status: 500 }
     );
   }

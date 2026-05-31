@@ -15,12 +15,12 @@ export async function PATCH(
     .single();
 
   if (!enrollment) {
-    return NextResponse.json({ error: "Enrollment not found" }, { status: 404 });
+    return NextResponse.json({ error: "Inscription introuvable" }, { status: 404 });
   }
 
   const sequence = enrollment.sequences as unknown as { workspace_id: string };
   if (sequence.workspace_id !== workspace.id) {
-    return NextResponse.json({ error: "Enrollment not found" }, { status: 404 });
+    return NextResponse.json({ error: "Inscription introuvable" }, { status: 404 });
   }
 
   const { error } = await supabase

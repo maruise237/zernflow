@@ -38,7 +38,7 @@ export async function POST(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
   const { data: membership } = await supabase
@@ -49,7 +49,7 @@ export async function POST(
     .single();
 
   if (!membership) {
-    return NextResponse.json({ error: "No workspace" }, { status: 404 });
+    return NextResponse.json({ error: "Aucun espace de travail" }, { status: 404 });
   }
 
   // Fetch the broadcast
@@ -61,7 +61,7 @@ export async function POST(
     .single();
 
   if (broadcastErr || !broadcast) {
-    return NextResponse.json({ error: "Broadcast not found" }, { status: 404 });
+    return NextResponse.json({ error: "Diffusion introuvable" }, { status: 404 });
   }
 
   if (broadcast.status !== "draft" && broadcast.status !== "scheduled") {
@@ -89,7 +89,7 @@ export async function POST(
 
   if (!messageContent?.text?.trim()) {
     return NextResponse.json(
-      { error: "Message content is required. Set message_content.text on the broadcast." },
+      { error: "Le contenu du message est requis. Définissez message_content.text sur la diffusion." },
       { status: 400 }
     );
   }
@@ -104,7 +104,7 @@ export async function POST(
 
   if (contactIds.length === 0) {
     return NextResponse.json(
-      { error: "No contacts match the segment filter" },
+      { error: "Aucun contact ne correspond au filtre de segment" },
       { status: 400 }
     );
   }
@@ -117,7 +117,7 @@ export async function POST(
 
   if (!contactChannels?.length) {
     return NextResponse.json(
-      { error: "No contacts have active channel connections" },
+      { error: "Aucun contact n'a de connexion de canal active" },
       { status: 400 }
     );
   }
@@ -155,7 +155,7 @@ export async function POST(
     if (insertErr) {
       console.error("Failed to insert broadcast recipients:", insertErr);
       return NextResponse.json(
-        { error: `Failed to create recipients: ${insertErr.message}` },
+        { error: `Impossible de créer les destinataires : ${insertErr.message}` },
         { status: 500 }
       );
     }
@@ -167,7 +167,7 @@ export async function POST(
 
   if (recipientIds.length === 0) {
     return NextResponse.json(
-      { error: "Failed to create broadcast recipients" },
+      { error: "Impossible de créer les destinataires de la diffusion" },
       { status: 500 }
     );
   }

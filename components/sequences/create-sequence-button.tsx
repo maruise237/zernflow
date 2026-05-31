@@ -18,13 +18,13 @@ export function CreateSequenceButton() {
       const res = await fetch("/api/v1/sequences", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "Untitled Sequence" }),
+        body: JSON.stringify({ name: "Séquence sans titre" }),
       });
       const result = await res.json();
 
       if (!res.ok || result.error) {
         console.error("Failed to create sequence:", result.error);
-        alert(`Failed to create sequence: ${result.error}`);
+        alert(`Impossible de créer la séquence : ${result.error}`);
         return;
       }
 
@@ -33,7 +33,7 @@ export function CreateSequenceButton() {
       }
     } catch (err) {
       console.error("Failed to create sequence:", err);
-      alert(`Failed to create sequence: ${err instanceof Error ? err.message : "Unknown error"}`);
+      alert(`Impossible de créer la séquence : ${err instanceof Error ? err.message : "Erreur inconnue"}`);
     } finally {
       pendingRef.current = false;
       setCreating(false);
@@ -51,7 +51,7 @@ export function CreateSequenceButton() {
       ) : (
         <Plus className="h-4 w-4" />
       )}
-      {creating ? "Creating..." : "New Sequence"}
+      {creating ? "Création..." : "Nouvelle séquence"}
     </button>
   );
 }

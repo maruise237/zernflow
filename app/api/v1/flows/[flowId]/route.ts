@@ -26,7 +26,7 @@ export async function GET(
   const supabase = await createClient();
   const workspaceId = await getWorkspaceId(supabase);
   if (!workspaceId)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
 
   const { data: flow, error } = await supabase
     .from("flows")
@@ -36,7 +36,7 @@ export async function GET(
     .single();
 
   if (error || !flow)
-    return NextResponse.json({ error: "Flow not found" }, { status: 404 });
+    return NextResponse.json({ error: "Flux introuvable" }, { status: 404 });
 
   return NextResponse.json(flow);
 }
@@ -49,7 +49,7 @@ export async function PUT(
   const supabase = await createClient();
   const workspaceId = await getWorkspaceId(supabase);
   if (!workspaceId)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
 
   const body = await request.json();
 
@@ -82,7 +82,7 @@ export async function DELETE(
   const supabase = await createClient();
   const workspaceId = await getWorkspaceId(supabase);
   if (!workspaceId)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
 
   const { error } = await supabase
     .from("flows")

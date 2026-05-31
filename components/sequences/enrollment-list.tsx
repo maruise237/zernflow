@@ -19,18 +19,18 @@ const statusConfig = {
       "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400",
   },
   completed: {
-    label: "Completed",
+    label: "Terminée",
     classes:
       "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
   },
   cancelled: {
-    label: "Cancelled",
+    label: "Annulée",
     classes: "bg-muted text-muted-foreground",
   },
 };
 
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString("en-US", {
+  return new Date(dateStr).toLocaleDateString("fr-FR", {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -67,19 +67,19 @@ export function EnrollmentList({
   return (
     <div className="px-8 py-6">
       <div className="mx-auto max-w-2xl">
-        <h2 className="text-lg font-semibold">Enrollments</h2>
+        <h2 className="text-lg font-semibold">Inscriptions</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Contacts currently in this sequence
+          Contacts actuellement dans cette séquence
         </p>
 
         {enrollments.length === 0 ? (
           <div className="mt-6 rounded-lg border border-dashed border-border p-8 text-center">
             <Users className="mx-auto h-8 w-8 text-muted-foreground/40" />
             <p className="mt-2 text-sm text-muted-foreground">
-              No contacts enrolled yet
+              Aucun contact inscrit pour le moment
             </p>
             <p className="mt-1 text-xs text-muted-foreground/70">
-              Contacts can be enrolled via flows or manually
+              Les contacts peuvent être inscrits via les flux ou manuellement
             </p>
           </div>
         ) : (
@@ -98,9 +98,9 @@ export function EnrollmentList({
                       {enrollment.contactName}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Step {enrollment.currentStepIndex + 1}
+                      Étape {enrollment.currentStepIndex + 1}
                       <span className="mx-1.5">-</span>
-                      Enrolled {formatDate(enrollment.enrolledAt)}
+                      Inscrit le {formatDate(enrollment.enrolledAt)}
                     </p>
                   </div>
                   <span
@@ -116,7 +116,7 @@ export function EnrollmentList({
                       onClick={() => handleCancel(enrollment.id)}
                       disabled={isCancelling}
                       className="rounded-lg p-1.5 text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400 disabled:opacity-50"
-                      title="Cancel enrollment"
+                      title="Annuler l'inscription"
                     >
                       {isCancelling ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />

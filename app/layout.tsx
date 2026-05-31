@@ -8,14 +8,14 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: {
-    default: "ZernFlow - The Open Source ManyChat Alternative",
+    default: "ZernFlow - L'alternative open source à ManyChat",
     template: "%s | ZernFlow",
   },
   description:
     "Automate DMs, comments, and flows across Instagram, Facebook, Telegram, X, Bluesky, and Reddit. Free, self-hostable, and open source.",
   metadataBase: new URL("https://zernflow.com"),
   openGraph: {
-    title: "ZernFlow - The Open Source ManyChat Alternative",
+    title: "ZernFlow - L'alternative open source à ManyChat",
     description:
       "Automate DMs, comments, and flows across Instagram, Facebook, Telegram, X, Bluesky, and Reddit. Free, self-hostable, and open source.",
     url: "https://zernflow.com",
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "ZernFlow - The Open Source ManyChat Alternative",
+    title: "ZernFlow - L'alternative open source à ManyChat",
     description:
       "Automate DMs, comments, and flows across 6 platforms. Free, self-hostable, open source.",
   },

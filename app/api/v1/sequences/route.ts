@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
   const name = String(body.name || "").trim();
 
-  if (!name) return NextResponse.json({ error: "Name is required" }, { status: 400 });
+  if (!name) return NextResponse.json({ error: "Le nom est requis" }, { status: 400 });
 
   const { data: sequence, error } = await supabase
     .from("sequences")

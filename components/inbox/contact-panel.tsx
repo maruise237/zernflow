@@ -32,8 +32,8 @@ interface ContactDetails {
 }
 
 function formatDate(dateStr: string | null): string {
-  if (!dateStr) return "Never";
-  return new Date(dateStr).toLocaleDateString([], {
+  if (!dateStr) return "Jamais";
+  return new Date(dateStr).toLocaleDateString("fr-FR", {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -129,7 +129,7 @@ export function ContactPanel({
     <div className="flex h-full w-80 flex-col border-l border-border bg-background">
       {/* Header */}
       <div className="flex h-14 items-center justify-between border-b border-border px-4">
-        <h3 className="text-sm font-semibold">Contact Info</h3>
+        <h3 className="text-sm font-semibold">Infos du contact</h3>
         <button
           onClick={onClose}
           className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -158,7 +158,7 @@ export function ContactPanel({
               )}
             </div>
             <p className="mt-3 text-sm font-semibold">
-              {details.contact.display_name ?? "Unknown"}
+              {details.contact.display_name ?? "Inconnu"}
             </p>
             {details.contact.email && (
               <p className="mt-0.5 text-xs text-muted-foreground">
@@ -173,7 +173,7 @@ export function ContactPanel({
                   : "bg-muted text-muted-foreground"
               )}
             >
-              {details.contact.is_subscribed ? "Subscribed" : "Unsubscribed"}
+              {details.contact.is_subscribed ? "Abonné" : "Désabonné"}
             </span>
           </div>
 
@@ -183,7 +183,7 @@ export function ContactPanel({
             {details.channels.length > 0 && (
               <div>
                 <h4 className="text-xs font-medium uppercase text-muted-foreground">
-                  Platforms
+                  Plateformes
                 </h4>
                 <div className="mt-2 space-y-1.5">
                   {details.channels.map((ch, i) => (
@@ -225,7 +225,7 @@ export function ContactPanel({
             <div>
               <h4 className="flex items-center gap-1.5 text-xs font-medium uppercase text-muted-foreground">
                 <Calendar className="h-3 w-3" />
-                Last Interaction
+                Dernière interaction
               </h4>
               <p className="mt-1 text-sm">
                 {formatDate(details.contact.last_interaction_at)}
@@ -236,7 +236,7 @@ export function ContactPanel({
             <div>
               <h4 className="flex items-center gap-1.5 text-xs font-medium uppercase text-muted-foreground">
                 <User className="h-3 w-3" />
-                Created
+                Créé
               </h4>
               <p className="mt-1 text-sm">
                 {formatDate(details.contact.created_at)}
@@ -247,7 +247,7 @@ export function ContactPanel({
             <div>
               <h4 className="flex items-center gap-1.5 text-xs font-medium uppercase text-muted-foreground">
                 <Tag className="h-3 w-3" />
-                Tags
+                Étiquettes
               </h4>
               {details.tags.length > 0 ? (
                 <div className="mt-2 flex flex-wrap gap-1.5">
@@ -270,7 +270,7 @@ export function ContactPanel({
                   ))}
                 </div>
               ) : (
-                <p className="mt-1 text-xs text-muted-foreground">No tags</p>
+                <p className="mt-1 text-xs text-muted-foreground">Aucune étiquette</p>
               )}
             </div>
 
@@ -279,7 +279,7 @@ export function ContactPanel({
               <div>
                 <h4 className="flex items-center gap-1.5 text-xs font-medium uppercase text-muted-foreground">
                   <Hash className="h-3 w-3" />
-                  Custom Fields
+                  Champs personnalisés
                 </h4>
                 <div className="mt-2 space-y-2">
                   {details.customFields.map((cf) => (
@@ -297,7 +297,7 @@ export function ContactPanel({
         </div>
       ) : (
         <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
-          Contact not found
+          Contact introuvable
         </div>
       )}
     </div>

@@ -65,9 +65,9 @@ const templates: FlowTemplate[] = [
   // ─── ONBOARDING ───────────────────────────────────────────────
   {
     id: "welcome-flow",
-    name: "Welcome Flow",
+    name: "Flux de bienvenue",
     description:
-      "Greet new subscribers with a warm welcome, wait a minute, then send a follow-up to keep them engaged.",
+      "Accueillez les nouveaux abonnés avec un message chaleureux, attendez une minute, puis envoyez une relance pour maintenir l'engagement.",
     category: "Onboarding",
     icon: MessageSquare,
     iconColor: "text-blue-600",
@@ -77,30 +77,30 @@ const templates: FlowTemplate[] = [
         id: "trigger-1",
         type: "trigger",
         position: { x: 250, y: 0 },
-        data: { label: "Welcome Trigger", triggerType: "welcome", config: {} },
+        data: { label: "Déclencheur de bienvenue", triggerType: "welcome", config: {} },
       },
       {
         id: "msg-1",
         type: "sendMessage",
         position: { x: 250, y: 150 },
         data: {
-          label: "Greeting",
-          text: "Hey there! Welcome! 👋 We're so glad to have you here. How can we help you today?",
+          label: "Message de bienvenue",
+          text: "Salut ! Bienvenue ! 👋 Nous sommes ravis de vous accueillir. Comment pouvons-nous vous aider aujourd'hui ?",
         },
       },
       {
         id: "delay-1",
         type: "delay",
         position: { x: 250, y: 300 },
-        data: { label: "Wait 1 minute", duration: 60, unit: "seconds" },
+        data: { label: "Attendre 1 minute", duration: 60, unit: "seconds" },
       },
       {
         id: "msg-2",
         type: "sendMessage",
         position: { x: 250, y: 450 },
         data: {
-          label: "Follow-up",
-          text: "By the way, feel free to ask me anything. I'm here to help! 😊",
+          label: "Relance",
+          text: "Au passage, posez-moi toutes vos questions. Je suis là pour vous aider ! 😊",
         },
       },
     ],
@@ -112,9 +112,9 @@ const templates: FlowTemplate[] = [
   },
   {
     id: "onboarding-quiz",
-    name: "Onboarding Quiz",
+    name: "Quiz d'accueil",
     description:
-      "Qualify new leads by asking 3 targeted questions, tag them by profile and send a personalised recommendation.",
+      "Qualifiez les nouveaux prospects avec 3 questions ciblées, étiquetez-les par profil et envoyez une recommandation personnalisée.",
     category: "Onboarding",
     icon: Search,
     iconColor: "text-indigo-600",
@@ -124,7 +124,7 @@ const templates: FlowTemplate[] = [
         id: "trigger-1",
         type: "trigger",
         position: { x: 250, y: 0 },
-        data: { label: "New Subscriber", triggerType: "welcome", config: {} },
+        data: { label: "Nouvel abonné", triggerType: "welcome", config: {} },
       },
       {
         id: "msg-q1",
@@ -132,35 +132,35 @@ const templates: FlowTemplate[] = [
         position: { x: 250, y: 150 },
         data: {
           label: "Question 1",
-          text: "Welcome! To get started, what best describes you?\n\nA) Business Owner\nB) Freelancer\nC) Student",
+          text: "Bienvenue ! Pour commencer, qu'est-ce qui vous décrit le mieux ?\n\nA) Propriétaire d'entreprise\nB) Freelance\nC) Étudiant",
         },
       },
       {
         id: "wait-1",
         type: "smartDelay",
         position: { x: 250, y: 280 },
-        data: { label: "Wait for reply", waitForInput: true, timeout: 600 },
+        data: { label: "Attendre la réponse", waitForInput: true, timeout: 600 },
       },
       {
         id: "set-role",
         type: "setCustomField",
         position: { x: 250, y: 400 },
-        data: { label: "Save role", fieldSlug: "role", value: "{{last_message}}" },
+        data: { label: "Enregistrer le rôle", fieldSlug: "role", value: "{{last_message}}" },
       },
       {
         id: "msg-rec",
         type: "sendMessage",
         position: { x: 250, y: 530 },
         data: {
-          label: "Personalised Recommendation",
-          text: "Thanks, {{name}}! Based on your profile, here's what we recommend for you 👇",
+          label: "Recommandation personnalisée",
+          text: "Merci, {{name}} ! D'après votre profil, voici ce que nous vous recommandons 👇",
         },
       },
       {
         id: "tag-qualified",
         type: "addTag",
         position: { x: 250, y: 660 },
-        data: { label: "Tag: qualified-lead", tagName: "qualified-lead" },
+        data: { label: "Étiquette : prospect qualifié", tagName: "qualified-lead" },
       },
     ],
     edges: [
@@ -175,9 +175,9 @@ const templates: FlowTemplate[] = [
   // ─── SUPPORT ──────────────────────────────────────────────────
   {
     id: "faq-bot",
-    name: "FAQ Bot",
+    name: "Bot FAQ",
     description:
-      'Respond to "help" or "faq" keywords by checking the message and routing to different answer branches.',
+      'Répondez aux mots-clés "help" ou "faq" en analysant le message et en orientant vers les bonnes réponses.',
     category: "Support",
     icon: HelpCircle,
     iconColor: "text-amber-600",
@@ -188,7 +188,7 @@ const templates: FlowTemplate[] = [
         type: "trigger",
         position: { x: 250, y: 0 },
         data: {
-          label: "FAQ Trigger",
+          label: "Déclencheur FAQ",
           triggerType: "keyword",
           config: { keywords: ["help", "faq"] },
         },
@@ -198,7 +198,7 @@ const templates: FlowTemplate[] = [
         type: "condition",
         position: { x: 250, y: 150 },
         data: {
-          label: "Check keyword",
+          label: "Vérifier le mot-clé",
           conditions: [
             { id: "c1", field: "trigger_keyword", operator: "equals", value: "help" },
           ],
@@ -209,8 +209,8 @@ const templates: FlowTemplate[] = [
         type: "sendMessage",
         position: { x: 50, y: 350 },
         data: {
-          label: "Help response",
-          text: "Here are some things I can help you with:\n- Pricing info\n- Account setup\n- Technical support\n\nJust type your question!",
+          label: "Réponse d'aide",
+          text: "Voici ce que je peux faire pour vous :\n- Informations tarifaires\n- Configuration du compte\n- Support technique\n\nÉcrivez simplement votre question !",
         },
       },
       {
@@ -218,8 +218,8 @@ const templates: FlowTemplate[] = [
         type: "sendMessage",
         position: { x: 450, y: 350 },
         data: {
-          label: "FAQ response",
-          text: "Here are our most frequently asked questions:\n\n1. How do I get started?\n2. What plans are available?\n3. How do I contact support?\n\nReply with a number for more details!",
+          label: "Réponse FAQ",
+          text: "Voici nos questions les plus fréquentes :\n\n1. Comment démarrer ?\n2. Quelles offres sont disponibles ?\n3. Comment contacter le support ?\n\nRépondez avec un numéro pour plus de détails !",
         },
       },
     ],
@@ -231,9 +231,9 @@ const templates: FlowTemplate[] = [
   },
   {
     id: "live-agent-handoff",
-    name: "Live Agent Handoff",
+    name: "Transfert vers un agent",
     description:
-      "Detect frustration keywords, collect the customer's issue, then seamlessly hand off to a human agent and tag the conversation.",
+      "Détectez les mots-clés de frustration, récupérez le problème du client, puis transférez vers un agent humain et étiquetez la conversation.",
     category: "Support",
     icon: Headphones,
     iconColor: "text-rose-600",
@@ -244,7 +244,7 @@ const templates: FlowTemplate[] = [
         type: "trigger",
         position: { x: 250, y: 0 },
         data: {
-          label: "Frustration Keywords",
+          label: "Mots-clés de frustration",
           triggerType: "keyword",
           config: { keywords: ["agent", "human", "speak to someone", "not happy"] },
         },
@@ -254,35 +254,35 @@ const templates: FlowTemplate[] = [
         type: "sendMessage",
         position: { x: 250, y: 150 },
         data: {
-          label: "Acknowledge",
-          text: "I'm sorry to hear that! 😔 Let me connect you with one of our agents right away. Can you briefly describe your issue?",
+          label: "Accuser réception",
+          text: "Je suis désolé de l'entendre ! 😔 Je vous mets en relation avec un agent tout de suite. Pouvez-vous décrire brièvement votre problème ?",
         },
       },
       {
         id: "wait-1",
         type: "smartDelay",
         position: { x: 250, y: 300 },
-        data: { label: "Wait for issue", waitForInput: true, timeout: 300 },
+        data: { label: "Attendre le problème", waitForInput: true, timeout: 300 },
       },
       {
         id: "set-issue",
         type: "setCustomField",
         position: { x: 250, y: 420 },
-        data: { label: "Save issue", fieldSlug: "support_issue", value: "{{last_message}}" },
+        data: { label: "Enregistrer le problème", fieldSlug: "support_issue", value: "{{last_message}}" },
       },
       {
         id: "tag-1",
         type: "addTag",
         position: { x: 250, y: 540 },
-        data: { label: "Tag: needs-human", tagName: "needs-human" },
+        data: { label: "Étiquette : besoin d'un humain", tagName: "needs-human" },
       },
       {
         id: "msg-2",
         type: "sendMessage",
         position: { x: 250, y: 660 },
         data: {
-          label: "Handoff message",
-          text: "Thank you! An agent will be with you in a few minutes. ⏳ Your reference number is #{{contact_id}}.",
+          label: "Message de transfert",
+          text: "Merci ! Un agent sera avec vous dans quelques minutes. ⏳ Votre numéro de référence est #{{contact_id}}.",
         },
       },
     ],
@@ -298,9 +298,9 @@ const templates: FlowTemplate[] = [
   // ─── MARKETING ────────────────────────────────────────────────
   {
     id: "lead-capture",
-    name: "Lead Capture",
+    name: "Capture de prospect",
     description:
-      "Collect lead information step by step: ask for name, wait for response, save it, then ask for email and tag the contact.",
+      "Collectez les informations du prospect étape par étape : demandez le nom, attendez la réponse, enregistrez-la, puis demandez l'email et étiquetez le contact.",
     category: "Marketing",
     icon: UserPlus,
     iconColor: "text-green-600",
@@ -311,7 +311,7 @@ const templates: FlowTemplate[] = [
         type: "trigger",
         position: { x: 250, y: 0 },
         data: {
-          label: "Lead Trigger",
+          label: "Déclencheur prospect",
           triggerType: "keyword",
           config: { keywords: ["interested", "info", "pricing"] },
         },
@@ -320,46 +320,46 @@ const templates: FlowTemplate[] = [
         id: "msg-name",
         type: "sendMessage",
         position: { x: 250, y: 120 },
-        data: { label: "Ask name", text: "Great, I'd love to help! What's your name?" },
+        data: { label: "Demander le nom", text: "Super, je serais ravi de vous aider ! Quel est votre nom ?" },
       },
       {
         id: "wait-name",
         type: "smartDelay",
         position: { x: 250, y: 240 },
-        data: { label: "Wait for name", waitForInput: true, timeout: 300 },
+        data: { label: "Attendre le nom", waitForInput: true, timeout: 300 },
       },
       {
         id: "set-name",
         type: "setCustomField",
         position: { x: 250, y: 360 },
-        data: { label: "Save name", fieldSlug: "name", value: "{{last_message}}" },
+        data: { label: "Enregistrer le nom", fieldSlug: "name", value: "{{last_message}}" },
       },
       {
         id: "msg-email",
         type: "sendMessage",
         position: { x: 250, y: 480 },
         data: {
-          label: "Ask email",
-          text: "Thanks, {{name}}! What's your email address so we can send you more details?",
+          label: "Demander l'email",
+          text: "Merci, {{name}} ! Quelle est votre adresse email pour que nous puissions vous envoyer plus de détails ?",
         },
       },
       {
         id: "wait-email",
         type: "smartDelay",
         position: { x: 250, y: 600 },
-        data: { label: "Wait for email", waitForInput: true, timeout: 300 },
+        data: { label: "Attendre l'email", waitForInput: true, timeout: 300 },
       },
       {
         id: "set-email",
         type: "setCustomField",
         position: { x: 250, y: 720 },
-        data: { label: "Save email", fieldSlug: "email", value: "{{last_message}}" },
+        data: { label: "Enregistrer l'email", fieldSlug: "email", value: "{{last_message}}" },
       },
       {
         id: "tag-lead",
         type: "addTag",
         position: { x: 250, y: 840 },
-        data: { label: 'Add "lead" tag', tagName: "lead" },
+        data: { label: 'Ajouter l\'étiquette "lead"', tagName: "lead" },
       },
     ],
     edges: [
@@ -374,9 +374,9 @@ const templates: FlowTemplate[] = [
   },
   {
     id: "gated-resource-dm",
-    name: "Gated Resource DM",
+    name: "Ressource verrouillée en DM",
     description:
-      "Trigger from a comment keyword, verify subscription status, ask non-subscribers to subscribe in DM, then deliver the promised resource after confirmation.",
+      "Déclenchez depuis un mot-clé en commentaire, vérifiez l'abonnement, demandez aux non-abonnés de s'abonner en DM, puis envoyez la ressource promise après confirmation.",
     category: "Marketing",
     icon: Gift,
     iconColor: "text-emerald-600",
@@ -387,7 +387,7 @@ const templates: FlowTemplate[] = [
         type: "trigger",
         position: { x: 320, y: 0 },
         data: {
-          label: "Comment keyword",
+          label: "Mot-clé en commentaire",
           triggerType: "comment_keyword",
           keywords: [
             { value: "prompt", matchType: "contains" },
@@ -400,7 +400,7 @@ const templates: FlowTemplate[] = [
         type: "condition",
         position: { x: 320, y: 150 },
         data: {
-          label: "Already subscribed?",
+          label: "Déjà abonné ?",
           logic: "and",
           conditions: [
             { field: "is_subscribed", operator: "equals", value: "true" },
@@ -412,10 +412,10 @@ const templates: FlowTemplate[] = [
         type: "action",
         position: { x: 80, y: 340 },
         data: {
-          label: "Send resource",
+          label: "Envoyer la ressource",
           actionType: "privateReply",
           text:
-            "Thanks for commenting! You are already subscribed, so here is the resource:\n\n{{resource_link}}\n\nEnjoy!",
+            "Merci pour votre commentaire ! Vous êtes déjà abonné, voici donc la ressource :\n\n{{resource_link}}\n\nBonne découverte !",
         },
       },
       {
@@ -423,10 +423,10 @@ const templates: FlowTemplate[] = [
         type: "action",
         position: { x: 560, y: 320 },
         data: {
-          label: "Ask to subscribe",
+          label: "Demander l'abonnement",
           actionType: "privateReply",
           text:
-            "Almost there. To receive the resource, subscribe/follow this account first. After that, tap the confirmation button in this DM and I will send it to you.",
+            "Presque terminé. Pour recevoir la ressource, abonnez-vous d'abord à ce compte. Ensuite, appuyez sur le bouton de confirmation dans ce DM et je vous l'enverrai.",
         },
       },
       {
@@ -434,13 +434,13 @@ const templates: FlowTemplate[] = [
         type: "sendMessage",
         position: { x: 560, y: 480 },
         data: {
-          label: "Confirm button",
+          label: "Bouton de confirmation",
           messages: [
             {
-              text: "Once you are subscribed, tap below so I can check and send the resource.",
+              text: "Une fois abonné, appuyez ci-dessous pour que je vérifie et vous envoie la ressource.",
               buttons: [
                 {
-                  title: "I subscribed",
+                  title: "Je me suis abonné",
                   type: "postback",
                   payload: "CONFIRM_SUBSCRIBED_FOR_RESOURCE",
                 },
@@ -454,7 +454,7 @@ const templates: FlowTemplate[] = [
         type: "action",
         position: { x: 560, y: 640 },
         data: {
-          label: "Wait for confirmation",
+          label: "Attendre la confirmation",
           actionType: "smartDelay",
           timeout: 24,
           timeoutUnit: "hours",
@@ -465,7 +465,7 @@ const templates: FlowTemplate[] = [
         type: "condition",
         position: { x: 560, y: 800 },
         data: {
-          label: "Subscribed now?",
+          label: "Abonné maintenant ?",
           logic: "and",
           conditions: [
             { field: "is_subscribed", operator: "equals", value: "true" },
@@ -477,11 +477,11 @@ const templates: FlowTemplate[] = [
         type: "sendMessage",
         position: { x: 340, y: 980 },
         data: {
-          label: "Deliver resource",
+          label: "Livrer la ressource",
           messages: [
             {
               text:
-                "Perfect, thanks for subscribing! Here is the resource:\n\n{{resource_link}}\n\nReply if you want help using it.",
+                "Parfait, merci pour votre abonnement ! Voici la ressource :\n\n{{resource_link}}\n\nRépondez si vous voulez de l'aide pour l'utiliser.",
             },
           ],
         },
@@ -491,7 +491,7 @@ const templates: FlowTemplate[] = [
         type: "action",
         position: { x: 340, y: 1140 },
         data: {
-          label: "Tag resource sent",
+          label: "Étiqueter ressource envoyée",
           actionType: "addTag",
           action: "add",
           tagName: "resource-sent",
@@ -502,14 +502,14 @@ const templates: FlowTemplate[] = [
         type: "sendMessage",
         position: { x: 760, y: 980 },
         data: {
-          label: "Not subscribed yet",
+          label: "Pas encore abonné",
           messages: [
             {
               text:
-                "I cannot verify the subscription yet. Subscribe/follow first, then tap the confirmation button again and I will unlock the resource.",
+                "Je ne peux pas encore vérifier l'abonnement. Abonnez-vous d'abord, puis appuyez de nouveau sur le bouton de confirmation et je déverrouillerai la ressource.",
               buttons: [
                 {
-                  title: "Check again",
+                  title: "Vérifier encore",
                   type: "postback",
                   payload: "CONFIRM_SUBSCRIBED_FOR_RESOURCE",
                 },
@@ -534,9 +534,9 @@ const templates: FlowTemplate[] = [
   },
   {
     id: "appointment-booking",
-    name: "Appointment Booking",
+    name: "Prise de rendez-vous",
     description:
-      "Qualify the prospect with 2 quick questions, then send a Calendly link to book a call — fully automated.",
+      "Qualifiez le prospect avec 2 questions rapides, puis envoyez un lien Calendly pour réserver un appel, entièrement automatisé.",
     category: "Marketing",
     icon: Calendar,
     iconColor: "text-violet-600",
@@ -547,7 +547,7 @@ const templates: FlowTemplate[] = [
         type: "trigger",
         position: { x: 250, y: 0 },
         data: {
-          label: "Book a Call",
+          label: "Réserver un appel",
           triggerType: "keyword",
           config: { keywords: ["book", "call", "appointment", "demo"] },
         },
@@ -557,51 +557,51 @@ const templates: FlowTemplate[] = [
         type: "sendMessage",
         position: { x: 250, y: 150 },
         data: {
-          label: "Budget question",
-          text: "Awesome! Before I share the link, quick question — what's your monthly budget range?\n\nA) Under $500\nB) $500–$2,000\nC) $2,000+",
+          label: "Question budget",
+          text: "Super ! Avant de partager le lien, petite question : quelle est votre fourchette de budget mensuel ?\n\nA) Moins de 500 $\nB) 500 $ à 2 000 $\nC) 2 000 $+",
         },
       },
       {
         id: "wait-q1",
         type: "smartDelay",
         position: { x: 250, y: 280 },
-        data: { label: "Wait for budget", waitForInput: true, timeout: 600 },
+        data: { label: "Attendre le budget", waitForInput: true, timeout: 600 },
       },
       {
         id: "set-budget",
         type: "setCustomField",
         position: { x: 250, y: 400 },
-        data: { label: "Save budget", fieldSlug: "budget", value: "{{last_message}}" },
+        data: { label: "Enregistrer le budget", fieldSlug: "budget", value: "{{last_message}}" },
       },
       {
         id: "msg-q2",
         type: "sendMessage",
         position: { x: 250, y: 530 },
         data: {
-          label: "Timeline question",
-          text: "Great! And when are you looking to get started?\n\nA) ASAP\nB) Next month\nC) Just exploring",
+          label: "Question calendrier",
+          text: "Parfait ! Et quand souhaitez-vous commencer ?\n\nA) Dès que possible\nB) Le mois prochain\nC) Je me renseigne simplement",
         },
       },
       {
         id: "wait-q2",
         type: "smartDelay",
         position: { x: 250, y: 660 },
-        data: { label: "Wait for timeline", waitForInput: true, timeout: 600 },
+        data: { label: "Attendre le calendrier", waitForInput: true, timeout: 600 },
       },
       {
         id: "msg-link",
         type: "sendMessage",
         position: { x: 250, y: 790 },
         data: {
-          label: "Send Calendly",
-          text: "Perfect! Here's the link to book your free 30-min strategy call 📅\n\nhttps://calendly.com/your-link\n\nSee you soon, {{name}}!",
+          label: "Envoyer Calendly",
+          text: "Parfait ! Voici le lien pour réserver votre appel stratégique gratuit de 30 minutes 📅\n\nhttps://calendly.com/your-link\n\nÀ très vite, {{name}} !",
         },
       },
       {
         id: "tag-hot",
         type: "addTag",
         position: { x: 250, y: 920 },
-        data: { label: "Tag: hot-lead", tagName: "hot-lead" },
+        data: { label: "Étiquette : prospect chaud", tagName: "hot-lead" },
       },
     ],
     edges: [
@@ -616,9 +616,9 @@ const templates: FlowTemplate[] = [
   },
   {
     id: "viral-giveaway",
-    name: "Viral Giveaway",
+    name: "Concours viral",
     description:
-      "Run a contest: collect email, confirm entry, ask them to share for bonus entries — skyrocket your audience.",
+      "Lancez un concours : collectez l'email, confirmez la participation, puis demandez un partage pour obtenir des chances bonus et faire grandir votre audience.",
     category: "Marketing",
     icon: Gift,
     iconColor: "text-pink-600",
@@ -629,7 +629,7 @@ const templates: FlowTemplate[] = [
         type: "trigger",
         position: { x: 250, y: 0 },
         data: {
-          label: "Giveaway keyword",
+          label: "Mot-clé concours",
           triggerType: "keyword",
           config: { keywords: ["giveaway", "contest", "win", "enter"] },
         },
@@ -639,56 +639,56 @@ const templates: FlowTemplate[] = [
         type: "sendMessage",
         position: { x: 250, y: 150 },
         data: {
-          label: "Entry message",
-          text: "🎉 You're entering our giveaway! To confirm your entry, what's your email address?",
+          label: "Message de participation",
+          text: "🎉 Vous participez à notre concours ! Pour confirmer votre participation, quelle est votre adresse email ?",
         },
       },
       {
         id: "wait-email",
         type: "smartDelay",
         position: { x: 250, y: 280 },
-        data: { label: "Wait for email", waitForInput: true, timeout: 300 },
+        data: { label: "Attendre l'email", waitForInput: true, timeout: 300 },
       },
       {
         id: "set-email",
         type: "setCustomField",
         position: { x: 250, y: 400 },
-        data: { label: "Save email", fieldSlug: "email", value: "{{last_message}}" },
+        data: { label: "Enregistrer l'email", fieldSlug: "email", value: "{{last_message}}" },
       },
       {
         id: "tag-entrant",
         type: "addTag",
         position: { x: 250, y: 520 },
-        data: { label: "Tag: giveaway-entrant", tagName: "giveaway-entrant" },
+        data: { label: "Étiquette : participant concours", tagName: "giveaway-entrant" },
       },
       {
         id: "msg-share",
         type: "sendMessage",
         position: { x: 250, y: 650 },
         data: {
-          label: "Share for bonus",
-          text: "✅ You're in! Want 3x more chances to win? Share this post and reply \"SHARED\" below! 🚀",
+          label: "Partager pour un bonus",
+          text: "✅ Votre participation est confirmée ! Vous voulez 3x plus de chances de gagner ? Partagez cette publication et répondez \"PARTAGÉ\" ci-dessous ! 🚀",
         },
       },
       {
         id: "wait-share",
         type: "smartDelay",
         position: { x: 250, y: 780 },
-        data: { label: "Wait for shared", waitForInput: true, timeout: 1800 },
+        data: { label: "Attendre le partage", waitForInput: true, timeout: 1800 },
       },
       {
         id: "tag-bonus",
         type: "addTag",
         position: { x: 250, y: 900 },
-        data: { label: "Tag: bonus-entries", tagName: "bonus-entries" },
+        data: { label: "Étiquette : chances bonus", tagName: "bonus-entries" },
       },
       {
         id: "msg-confirm",
         type: "sendMessage",
         position: { x: 250, y: 1020 },
         data: {
-          label: "Bonus confirmed",
-          text: "🔥 Awesome! Your bonus entries have been added. Good luck — winner announced on Friday! 🤞",
+          label: "Bonus confirmé",
+          text: "🔥 Super ! Vos chances bonus ont été ajoutées. Bonne chance : le gagnant sera annoncé vendredi ! 🤞",
         },
       },
     ],
@@ -707,9 +707,9 @@ const templates: FlowTemplate[] = [
   // ─── E-COMMERCE ───────────────────────────────────────────────
   {
     id: "abandoned-cart",
-    name: "Abandoned Cart Recovery",
+    name: "Relance de panier abandonné",
     description:
-      "Re-engage users who viewed a product but didn't buy. Send a reminder after 1h, then a discount code after 24h.",
+      "Réengagez les utilisateurs qui ont consulté un produit sans acheter. Envoyez un rappel après 1 h, puis un code promo après 24 h.",
     category: "E-commerce",
     icon: ShoppingCart,
     iconColor: "text-orange-600",
@@ -720,7 +720,7 @@ const templates: FlowTemplate[] = [
         type: "trigger",
         position: { x: 250, y: 0 },
         data: {
-          label: "Cart Abandoned",
+          label: "Panier abandonné",
           triggerType: "keyword",
           config: { keywords: ["cart", "abandoned"] },
         },
@@ -729,15 +729,15 @@ const templates: FlowTemplate[] = [
         id: "delay-1h",
         type: "delay",
         position: { x: 250, y: 150 },
-        data: { label: "Wait 1 hour", duration: 3600, unit: "seconds" },
+        data: { label: "Attendre 1 heure", duration: 3600, unit: "seconds" },
       },
       {
         id: "msg-reminder",
         type: "sendMessage",
         position: { x: 250, y: 300 },
         data: {
-          label: "Reminder",
-          text: "Hey {{name}}, you left something in your cart! 🛒 Your items are reserved for a limited time. Ready to complete your order?",
+          label: "Rappel",
+          text: "Bonjour {{name}}, vous avez laissé un article dans votre panier ! 🛒 Vos articles sont réservés pour une durée limitée. Prêt à finaliser votre commande ?",
         },
       },
       {
@@ -745,7 +745,7 @@ const templates: FlowTemplate[] = [
         type: "condition",
         position: { x: 250, y: 450 },
         data: {
-          label: "Did they buy?",
+          label: "A-t-il acheté ?",
           conditions: [{ id: "c1", field: "tag", operator: "contains", value: "purchased" }],
         },
       },
@@ -753,15 +753,15 @@ const templates: FlowTemplate[] = [
         id: "delay-24h",
         type: "delay",
         position: { x: 450, y: 600 },
-        data: { label: "Wait 23 more hours", duration: 82800, unit: "seconds" },
+        data: { label: "Attendre encore 23 heures", duration: 82800, unit: "seconds" },
       },
       {
         id: "msg-discount",
         type: "sendMessage",
         position: { x: 450, y: 750 },
         data: {
-          label: "Discount code",
-          text: "Last chance! 🔥 Here's 15% OFF just for you: **SAVE15**\n\nUse it at checkout before it expires! ⏰",
+          label: "Code promo",
+          text: "Dernière chance ! 🔥 Voici 15 % de réduction rien que pour vous : **SAVE15**\n\nUtilisez-le au paiement avant expiration ! ⏰",
         },
       },
     ],
@@ -775,9 +775,9 @@ const templates: FlowTemplate[] = [
   },
   {
     id: "order-status",
-    name: "Order Status Updates",
+    name: "Mises à jour de commande",
     description:
-      "Keep customers informed with real-time order confirmations, shipping notifications, and delivery confirmations.",
+      "Tenez les clients informés avec des confirmations de commande, des notifications d'expédition et des confirmations de livraison en temps réel.",
     category: "E-commerce",
     icon: Package,
     iconColor: "text-cyan-600",
@@ -788,7 +788,7 @@ const templates: FlowTemplate[] = [
         type: "trigger",
         position: { x: 250, y: 0 },
         data: {
-          label: "Order keyword",
+          label: "Mot-clé commande",
           triggerType: "keyword",
           config: { keywords: ["order", "tracking", "where is my"] },
         },
@@ -798,38 +798,38 @@ const templates: FlowTemplate[] = [
         type: "sendMessage",
         position: { x: 250, y: 150 },
         data: {
-          label: "Order confirmed",
-          text: "🎉 Order confirmed! Your order #{{order_id}} has been received and is being processed.",
+          label: "Commande confirmée",
+          text: "🎉 Commande confirmée ! Votre commande #{{order_id}} a bien été reçue et est en cours de traitement.",
         },
       },
       {
         id: "delay-ship",
         type: "delay",
         position: { x: 250, y: 300 },
-        data: { label: "Wait for shipping (2 days)", duration: 172800, unit: "seconds" },
+        data: { label: "Attendre l'expédition (2 jours)", duration: 172800, unit: "seconds" },
       },
       {
         id: "msg-shipped",
         type: "sendMessage",
         position: { x: 250, y: 450 },
         data: {
-          label: "Shipped notification",
-          text: "📦 Your order is on its way! Track your package here: {{tracking_link}}\n\nEstimated delivery: 3-5 business days.",
+          label: "Notification d'expédition",
+          text: "📦 Votre commande est en route ! Suivez votre colis ici : {{tracking_link}}\n\nLivraison estimée : 3 à 5 jours ouvrés.",
         },
       },
       {
         id: "delay-deliver",
         type: "delay",
         position: { x: 250, y: 600 },
-        data: { label: "Wait for delivery (4 days)", duration: 345600, unit: "seconds" },
+        data: { label: "Attendre la livraison (4 jours)", duration: 345600, unit: "seconds" },
       },
       {
         id: "msg-delivered",
         type: "sendMessage",
         position: { x: 250, y: 750 },
         data: {
-          label: "Delivery confirmation",
-          text: "✅ Your order should be delivered by now! Enjoying it? Reply \"REVIEW\" to share your feedback and get 10% off your next order! 🌟",
+          label: "Confirmation de livraison",
+          text: "✅ Votre commande devrait maintenant être livrée ! Vous l'appréciez ? Répondez \"AVIS\" pour partager votre retour et obtenir 10 % sur votre prochaine commande ! 🌟",
         },
       },
     ],
@@ -843,9 +843,9 @@ const templates: FlowTemplate[] = [
   },
   {
     id: "review-request",
-    name: "Review & Testimonial Request",
+    name: "Demande d'avis et témoignage",
     description:
-      "After purchase, automatically ask for a review. Route happy customers to leave a public review and unhappy ones to support.",
+      "Après achat, demandez automatiquement un avis. Orientez les clients satisfaits vers un avis public et les autres vers le support.",
     category: "E-commerce",
     icon: Star,
     iconColor: "text-yellow-600",
@@ -856,7 +856,7 @@ const templates: FlowTemplate[] = [
         type: "trigger",
         position: { x: 250, y: 0 },
         data: {
-          label: "Post-purchase trigger",
+          label: "Déclencheur post-achat",
           triggerType: "keyword",
           config: { keywords: ["review", "feedback"] },
         },
@@ -866,22 +866,22 @@ const templates: FlowTemplate[] = [
         type: "sendMessage",
         position: { x: 250, y: 150 },
         data: {
-          label: "Rating request",
-          text: "Hi {{name}}! How would you rate your recent experience with us?\n\n⭐ 1-2 (Not great)\n⭐⭐⭐ 3 (Okay)\n⭐⭐⭐⭐⭐ 4-5 (Amazing!)",
+          label: "Demande de note",
+          text: "Bonjour {{name}} ! Comment noteriez-vous votre récente expérience avec nous ?\n\n⭐ 1-2 (Pas terrible)\n⭐⭐⭐ 3 (Correct)\n⭐⭐⭐⭐⭐ 4-5 (Excellent !)",
         },
       },
       {
         id: "wait-rating",
         type: "smartDelay",
         position: { x: 250, y: 280 },
-        data: { label: "Wait for rating", waitForInput: true, timeout: 600 },
+        data: { label: "Attendre la note", waitForInput: true, timeout: 600 },
       },
       {
         id: "condition-1",
         type: "condition",
         position: { x: 250, y: 400 },
         data: {
-          label: "Happy customer?",
+          label: "Client satisfait ?",
           conditions: [{ id: "c1", field: "last_message", operator: "contains", value: "4" }],
         },
       },
@@ -890,8 +890,8 @@ const templates: FlowTemplate[] = [
         type: "sendMessage",
         position: { x: 50, y: 560 },
         data: {
-          label: "Leave public review",
-          text: "That's amazing! 🎉 Would you mind leaving a quick review? It means the world to us!\n\n👉 https://g.page/your-business/review",
+          label: "Laisser un avis public",
+          text: "C'est génial ! 🎉 Pourriez-vous laisser un petit avis ? Cela compte énormément pour nous !\n\n👉 https://g.page/your-business/review",
         },
       },
       {
@@ -899,8 +899,8 @@ const templates: FlowTemplate[] = [
         type: "sendMessage",
         position: { x: 450, y: 560 },
         data: {
-          label: "Escalate to support",
-          text: "We're so sorry to hear that! 😔 Let us make it right. Our support team will reach out to you within 24 hours.",
+          label: "Transférer au support",
+          text: "Nous sommes vraiment désolés de l'apprendre ! 😔 Laissez-nous corriger cela. Notre équipe support vous contactera sous 24 heures.",
         },
       },
     ],
@@ -916,9 +916,9 @@ const templates: FlowTemplate[] = [
   // ─── ENGAGEMENT ───────────────────────────────────────────────
   {
     id: "re-engagement",
-    name: "Win-Back Campaign",
+    name: "Campagne de réactivation",
     description:
-      "Re-engage inactive subscribers who haven't interacted in 30+ days with a compelling offer and a personal touch.",
+      "Réengagez les abonnés inactifs depuis plus de 30 jours avec une offre attractive et un message personnalisé.",
     category: "Engagement",
     icon: RefreshCw,
     iconColor: "text-teal-600",
@@ -929,7 +929,7 @@ const templates: FlowTemplate[] = [
         type: "trigger",
         position: { x: 250, y: 0 },
         data: {
-          label: "Inactive Trigger",
+          label: "Déclencheur inactif",
           triggerType: "keyword",
           config: { keywords: ["inactive", "winback"] },
         },
@@ -939,37 +939,37 @@ const templates: FlowTemplate[] = [
         type: "sendMessage",
         position: { x: 250, y: 150 },
         data: {
-          label: "We miss you",
-          text: "Hey {{name}}, we miss you! 😢 It's been a while since we last spoke. Is there anything we can help you with?",
+          label: "Vous nous manquez",
+          text: "Bonjour {{name}}, vous nous manquez ! 😢 Cela fait un moment que nous n'avons pas échangé. Pouvons-nous vous aider avec quelque chose ?",
         },
       },
       {
         id: "delay-1",
         type: "delay",
         position: { x: 250, y: 300 },
-        data: { label: "Wait 3 days", duration: 259200, unit: "seconds" },
+        data: { label: "Attendre 3 jours", duration: 259200, unit: "seconds" },
       },
       {
         id: "msg-offer",
         type: "sendMessage",
         position: { x: 250, y: 450 },
         data: {
-          label: "Special offer",
-          text: "Still there? 👋 Here's a special offer just for you — 20% OFF anything in our store: **COMEBACK20** 🎁\n\nOffer expires in 48 hours!",
+          label: "Offre spéciale",
+          text: "Toujours là ? 👋 Voici une offre spéciale rien que pour vous : 20 % de réduction sur toute la boutique avec **COMEBACK20** 🎁\n\nL'offre expire dans 48 heures !",
         },
       },
       {
         id: "wait-reply",
         type: "smartDelay",
         position: { x: 250, y: 600 },
-        data: { label: "Wait for reply", waitForInput: true, timeout: 172800 },
+        data: { label: "Attendre la réponse", waitForInput: true, timeout: 172800 },
       },
       {
         id: "condition-replied",
         type: "condition",
         position: { x: 250, y: 730 },
         data: {
-          label: "Did they reply?",
+          label: "A-t-il répondu ?",
           conditions: [{ id: "c1", field: "has_replied", operator: "equals", value: "true" }],
         },
       },
@@ -977,13 +977,13 @@ const templates: FlowTemplate[] = [
         id: "tag-active",
         type: "addTag",
         position: { x: 50, y: 880 },
-        data: { label: "Tag: re-engaged", tagName: "re-engaged" },
+        data: { label: "Étiquette : réengagé", tagName: "re-engaged" },
       },
       {
         id: "tag-inactive",
         type: "addTag",
         position: { x: 450, y: 880 },
-        data: { label: "Tag: churned", tagName: "churned" },
+        data: { label: "Étiquette : perdu", tagName: "churned" },
       },
     ],
     edges: [
@@ -998,9 +998,9 @@ const templates: FlowTemplate[] = [
   },
   {
     id: "referral-program",
-    name: "Referral Program",
+    name: "Programme de parrainage",
     description:
-      "Turn your best customers into brand ambassadors. Give them a unique referral code and reward them when friends sign up.",
+      "Transformez vos meilleurs clients en ambassadeurs. Donnez-leur un code de parrainage unique et récompensez-les quand leurs amis s'inscrivent.",
     category: "Engagement",
     icon: Users,
     iconColor: "text-blue-600",
@@ -1011,7 +1011,7 @@ const templates: FlowTemplate[] = [
         type: "trigger",
         position: { x: 250, y: 0 },
         data: {
-          label: "Referral keyword",
+          label: "Mot-clé parrainage",
           triggerType: "keyword",
           config: { keywords: ["refer", "referral", "invite friend"] },
         },
@@ -1021,8 +1021,8 @@ const templates: FlowTemplate[] = [
         type: "sendMessage",
         position: { x: 250, y: 150 },
         data: {
-          label: "Explain program",
-          text: "🤝 Our referral program is simple: share your unique link, and you both get rewarded!\n\nFor every friend who signs up, you get $10 credit. No limit!",
+          label: "Expliquer le programme",
+          text: "🤝 Notre programme de parrainage est simple : partagez votre lien unique et vous êtes tous les deux récompensés !\n\nPour chaque ami inscrit, vous recevez 10 $ de crédit. Sans limite !",
         },
       },
       {
@@ -1030,7 +1030,7 @@ const templates: FlowTemplate[] = [
         type: "setCustomField",
         position: { x: 250, y: 300 },
         data: {
-          label: "Set referral code",
+          label: "Définir le code de parrainage",
           fieldSlug: "referral_code",
           value: "REF_{{contact_id}}",
         },
@@ -1040,15 +1040,15 @@ const templates: FlowTemplate[] = [
         type: "sendMessage",
         position: { x: 250, y: 430 },
         data: {
-          label: "Send referral link",
-          text: "Here's your personal referral link, {{name}}! 🎯\n\nhttps://yourapp.com/signup?ref={{referral_code}}\n\nShare it and start earning!",
+          label: "Envoyer le lien de parrainage",
+          text: "Voici votre lien de parrainage personnel, {{name}} ! 🎯\n\nhttps://yourapp.com/signup?ref={{referral_code}}\n\nPartagez-le et commencez à gagner !",
         },
       },
       {
         id: "tag-ambassador",
         type: "addTag",
         position: { x: 250, y: 560 },
-        data: { label: "Tag: ambassador", tagName: "brand-ambassador" },
+        data: { label: "Étiquette : ambassadeur", tagName: "brand-ambassador" },
       },
     ],
     edges: [
@@ -1060,9 +1060,9 @@ const templates: FlowTemplate[] = [
   },
   {
     id: "loyalty-program",
-    name: "Loyalty Rewards",
+    name: "Récompenses fidélité",
     description:
-      "Identify VIP customers by purchase count, send them exclusive perks and a personalised thank-you message.",
+      "Identifiez les clients VIP selon leur nombre d'achats, puis envoyez-leur des avantages exclusifs et un message de remerciement personnalisé.",
     category: "Engagement",
     icon: Award,
     iconColor: "text-amber-600",
@@ -1073,7 +1073,7 @@ const templates: FlowTemplate[] = [
         type: "trigger",
         position: { x: 250, y: 0 },
         data: {
-          label: "Loyalty trigger",
+          label: "Déclencheur fidélité",
           triggerType: "keyword",
           config: { keywords: ["points", "rewards", "loyalty", "vip"] },
         },
@@ -1083,7 +1083,7 @@ const templates: FlowTemplate[] = [
         type: "condition",
         position: { x: 250, y: 150 },
         data: {
-          label: "Is VIP?",
+          label: "Est VIP ?",
           conditions: [{ id: "c1", field: "purchase_count", operator: "greater_than", value: "5" }],
         },
       },
@@ -1092,8 +1092,8 @@ const templates: FlowTemplate[] = [
         type: "sendMessage",
         position: { x: 50, y: 330 },
         data: {
-          label: "VIP welcome",
-          text: "Welcome, VIP! 👑 You're one of our most valued customers. As a thank-you, here's your exclusive 30% OFF code: **VIP30**\n\nPlus, you get early access to all new products!",
+          label: "Accueil VIP",
+          text: "Bienvenue, VIP ! 👑 Vous faites partie de nos clients les plus précieux. Pour vous remercier, voici votre code exclusif de 30 % de réduction : **VIP30**\n\nEn plus, vous avez un accès anticipé à tous les nouveaux produits !",
         },
       },
       {
@@ -1101,15 +1101,15 @@ const templates: FlowTemplate[] = [
         type: "sendMessage",
         position: { x: 450, y: 330 },
         data: {
-          label: "Standard member",
-          text: "Hi {{name}}! 🌟 You're part of our loyalty program. Make 3 more purchases to unlock VIP status and exclusive perks! You're {{purchases_remaining}} away!",
+          label: "Membre standard",
+          text: "Bonjour {{name}} ! 🌟 Vous faites partie de notre programme fidélité. Faites encore 3 achats pour débloquer le statut VIP et des avantages exclusifs ! Il vous en reste {{purchases_remaining}}.",
         },
       },
       {
         id: "tag-vip",
         type: "addTag",
         position: { x: 50, y: 490 },
-        data: { label: "Tag: VIP", tagName: "vip" },
+        data: { label: "Étiquette : VIP", tagName: "vip" },
       },
     ],
     edges: [
@@ -1123,9 +1123,9 @@ const templates: FlowTemplate[] = [
   // ─── AUTOMATION ───────────────────────────────────────────────
   {
     id: "event-reminder",
-    name: "Event & Webinar Reminder",
+    name: "Rappel d'événement et webinaire",
     description:
-      "Automate your event promotion: collect registrations, confirm instantly, send a 24h reminder, and a live link on the day.",
+      "Automatisez la promotion de vos événements : collectez les inscriptions, confirmez instantanément, envoyez un rappel 24 h avant et le lien du direct le jour J.",
     category: "Automation",
     icon: Bell,
     iconColor: "text-purple-600",
@@ -1136,7 +1136,7 @@ const templates: FlowTemplate[] = [
         type: "trigger",
         position: { x: 250, y: 0 },
         data: {
-          label: "Register keyword",
+          label: "Mot-clé inscription",
           triggerType: "keyword",
           config: { keywords: ["register", "webinar", "event", "join"] },
         },
@@ -1146,44 +1146,44 @@ const templates: FlowTemplate[] = [
         type: "sendMessage",
         position: { x: 250, y: 150 },
         data: {
-          label: "Registration confirmed",
-          text: "🎉 You're registered for our upcoming webinar!\n\n📅 Date: {{event_date}}\n🕐 Time: {{event_time}}\n\nWe'll send you a reminder 24h before!",
+          label: "Inscription confirmée",
+          text: "🎉 Vous êtes inscrit à notre prochain webinaire !\n\n📅 Date : {{event_date}}\n🕐 Heure : {{event_time}}\n\nNous vous enverrons un rappel 24 h avant !",
         },
       },
       {
         id: "set-registered",
         type: "setCustomField",
         position: { x: 250, y: 300 },
-        data: { label: "Mark as registered", fieldSlug: "event_registered", value: "true" },
+        data: { label: "Marquer comme inscrit", fieldSlug: "event_registered", value: "true" },
       },
       {
         id: "delay-24h",
         type: "delay",
         position: { x: 250, y: 430 },
-        data: { label: "Wait until 24h before", duration: 86400, unit: "seconds" },
+        data: { label: "Attendre jusqu'à 24 h avant", duration: 86400, unit: "seconds" },
       },
       {
         id: "msg-reminder",
         type: "sendMessage",
         position: { x: 250, y: 580 },
         data: {
-          label: "24h reminder",
-          text: "⏰ Reminder: Our webinar is tomorrow at {{event_time}}!\n\nHere's what we'll cover:\n✅ Topic 1\n✅ Topic 2\n✅ Topic 3\n\nSee you there!",
+          label: "Rappel 24 h",
+          text: "⏰ Rappel : notre webinaire a lieu demain à {{event_time}} !\n\nVoici ce que nous allons couvrir :\n✅ Sujet 1\n✅ Sujet 2\n✅ Sujet 3\n\nÀ demain !",
         },
       },
       {
         id: "delay-day",
         type: "delay",
         position: { x: 250, y: 730 },
-        data: { label: "Wait until event day", duration: 82800, unit: "seconds" },
+        data: { label: "Attendre le jour de l'événement", duration: 82800, unit: "seconds" },
       },
       {
         id: "msg-live",
         type: "sendMessage",
         position: { x: 250, y: 880 },
         data: {
-          label: "Live link",
-          text: "🔴 We're LIVE! Join the webinar now:\n\n👉 {{live_link}}\n\nSee you inside, {{name}}!",
+          label: "Lien du direct",
+          text: "🔴 Nous sommes en direct ! Rejoignez le webinaire maintenant :\n\n👉 {{live_link}}\n\nÀ tout de suite, {{name}} !",
         },
       },
     ],
@@ -1198,9 +1198,9 @@ const templates: FlowTemplate[] = [
   },
   {
     id: "upsell-flow",
-    name: "Upsell & Cross-sell",
+    name: "Upsell et vente croisée",
     description:
-      "After a purchase, intelligently recommend complementary products based on the customer's order, maximising revenue.",
+      "Après un achat, recommandez intelligemment des produits complémentaires selon la commande du client afin d'augmenter le revenu.",
     category: "Automation",
     icon: TrendingUp,
     iconColor: "text-emerald-600",
@@ -1211,7 +1211,7 @@ const templates: FlowTemplate[] = [
         type: "trigger",
         position: { x: 250, y: 0 },
         data: {
-          label: "Purchase trigger",
+          label: "Déclencheur achat",
           triggerType: "keyword",
           config: { keywords: ["purchased", "thank you for your order"] },
         },
@@ -1220,37 +1220,37 @@ const templates: FlowTemplate[] = [
         id: "delay-1",
         type: "delay",
         position: { x: 250, y: 150 },
-        data: { label: "Wait 2 days", duration: 172800, unit: "seconds" },
+        data: { label: "Attendre 2 jours", duration: 172800, unit: "seconds" },
       },
       {
         id: "msg-1",
         type: "sendMessage",
         position: { x: 250, y: 300 },
         data: {
-          label: "Upsell message",
-          text: "Hey {{name}}! 👋 Enjoying your purchase? Customers who bought that also loved these:\n\n🔥 Product A — $29\n💎 Product B — $49\n🚀 Bundle Deal — $65 (save $13!)",
+          label: "Message de vente additionnelle",
+          text: "Bonjour {{name}} ! 👋 Vous appréciez votre achat ? Les clients qui ont acheté cela ont aussi aimé :\n\n🔥 Produit A — 29 $\n💎 Produit B — 49 $\n🚀 Pack spécial — 65 $ (13 $ économisés !)",
         },
       },
       {
         id: "wait-reply",
         type: "smartDelay",
         position: { x: 250, y: 450 },
-        data: { label: "Wait for interest", waitForInput: true, timeout: 86400 },
+        data: { label: "Attendre l'intérêt", waitForInput: true, timeout: 86400 },
       },
       {
         id: "msg-offer",
         type: "sendMessage",
         position: { x: 250, y: 580 },
         data: {
-          label: "Limited offer",
-          text: "Still interested? Here's 10% off if you add it to your cart in the next 2 hours! ⏳\n\nUse code: **UPGRADE10**",
+          label: "Offre limitée",
+          text: "Toujours intéressé ? Voici 10 % de réduction si vous l'ajoutez au panier dans les 2 prochaines heures ! ⏳\n\nUtilisez le code : **UPGRADE10**",
         },
       },
       {
         id: "tag-upsell",
         type: "addTag",
         position: { x: 250, y: 710 },
-        data: { label: "Tag: upsell-targeted", tagName: "upsell-targeted" },
+        data: { label: "Étiquette : vente additionnelle ciblée", tagName: "upsell-targeted" },
       },
     ],
     edges: [
@@ -1263,9 +1263,9 @@ const templates: FlowTemplate[] = [
   },
   {
     id: "ai-customer-service",
-    name: "AI Customer Service Bot",
+    name: "Bot de service client IA",
     description:
-      "Leverage AI to answer any customer question intelligently, with automatic escalation to a human if confidence is low.",
+      "Utilisez l'IA pour répondre intelligemment aux questions clients, avec transfert automatique vers un humain si la confiance est faible.",
     category: "Automation",
     icon: Zap,
     iconColor: "text-yellow-600",
@@ -1276,7 +1276,7 @@ const templates: FlowTemplate[] = [
         type: "trigger",
         position: { x: 250, y: 0 },
         data: {
-          label: "Any message",
+          label: "N'importe quel message",
           triggerType: "keyword",
           config: { keywords: ["?", "how", "what", "when", "where", "why", "can you"] },
         },
@@ -1286,9 +1286,9 @@ const templates: FlowTemplate[] = [
         type: "aiResponse",
         position: { x: 250, y: 150 },
         data: {
-          label: "AI Answer",
+          label: "Réponse IA",
           systemPrompt:
-            "You are a helpful customer service assistant. Answer questions concisely and professionally. If you are unsure, say 'I'll connect you with a specialist.'",
+            "Vous êtes un assistant service client utile. Répondez aux questions de façon concise et professionnelle. Si vous n'êtes pas sûr, dites : 'Je vais vous mettre en relation avec un spécialiste.'",
           model: "openai/gpt-4o-mini",
           temperature: 0.3,
           maxTokens: 300,
@@ -1300,7 +1300,7 @@ const templates: FlowTemplate[] = [
         type: "condition",
         position: { x: 250, y: 320 },
         data: {
-          label: "Needs human?",
+          label: "Besoin d'un humain ?",
           conditions: [
             { id: "c1", field: "ai_response", operator: "contains", value: "specialist" },
           ],
@@ -1310,15 +1310,15 @@ const templates: FlowTemplate[] = [
         id: "tag-escalate",
         type: "addTag",
         position: { x: 50, y: 480 },
-        data: { label: "Tag: needs-agent", tagName: "needs-agent" },
+        data: { label: "Étiquette : besoin d'un agent", tagName: "needs-agent" },
       },
       {
         id: "msg-end",
         type: "sendMessage",
         position: { x: 450, y: 480 },
         data: {
-          label: "Satisfied?",
-          text: "Was that helpful? Reply \"YES\" if you're all set, or ask another question! 😊",
+          label: "Satisfait ?",
+          text: "Cela vous a-t-il aidé ? Répondez \"OUI\" si tout est bon, ou posez une autre question ! 😊",
         },
       },
     ],
@@ -1331,9 +1331,9 @@ const templates: FlowTemplate[] = [
   },
   {
     id: "phone-number-collector",
-    name: "Phone Number Collector",
+    name: "Collecte de numéros de téléphone",
     description:
-      "Seamlessly collect and validate phone numbers from contacts, then tag them for SMS marketing campaigns.",
+      "Collectez et validez facilement les numéros de téléphone des contacts, puis étiquetez-les pour vos campagnes SMS.",
     category: "Automation",
     icon: Phone,
     iconColor: "text-green-600",
@@ -1344,7 +1344,7 @@ const templates: FlowTemplate[] = [
         type: "trigger",
         position: { x: 250, y: 0 },
         data: {
-          label: "Phone request trigger",
+          label: "Déclencheur demande de téléphone",
           triggerType: "keyword",
           config: { keywords: ["sms", "text me", "phone", "call me"] },
         },
@@ -1354,27 +1354,27 @@ const templates: FlowTemplate[] = [
         type: "sendMessage",
         position: { x: 250, y: 150 },
         data: {
-          label: "Ask phone",
-          text: "Sure! What's your phone number? (Include country code, e.g. +1 555 123 4567)",
+          label: "Demander le téléphone",
+          text: "Bien sûr ! Quel est votre numéro de téléphone ? (Incluez l'indicatif pays, ex. +237 6 00 00 00 00)",
         },
       },
       {
         id: "wait-phone",
         type: "smartDelay",
         position: { x: 250, y: 280 },
-        data: { label: "Wait for phone", waitForInput: true, timeout: 300 },
+        data: { label: "Attendre le téléphone", waitForInput: true, timeout: 300 },
       },
       {
         id: "set-phone",
         type: "setCustomField",
         position: { x: 250, y: 400 },
-        data: { label: "Save phone", fieldSlug: "phone", value: "{{last_message}}" },
+        data: { label: "Enregistrer le téléphone", fieldSlug: "phone", value: "{{last_message}}" },
       },
       {
         id: "tag-sms",
         type: "addTag",
         position: { x: 250, y: 520 },
-        data: { label: "Tag: sms-subscriber", tagName: "sms-subscriber" },
+        data: { label: "Étiquette : abonné SMS", tagName: "sms-subscriber" },
       },
       {
         id: "msg-confirm",
@@ -1382,7 +1382,7 @@ const templates: FlowTemplate[] = [
         position: { x: 250, y: 640 },
         data: {
           label: "Confirmation",
-          text: "✅ Perfect! We've saved your number. You'll receive exclusive SMS updates and deals. Reply STOP anytime to opt out.",
+          text: "✅ Parfait ! Nous avons enregistré votre numéro. Vous recevrez des mises à jour et offres exclusives par SMS. Répondez STOP à tout moment pour vous désabonner.",
         },
       },
     ],
@@ -1396,9 +1396,9 @@ const templates: FlowTemplate[] = [
   },
   {
     id: "satisfaction-survey",
-    name: "Customer Satisfaction Survey",
+    name: "Enquête de satisfaction client",
     description:
-      "Run a quick NPS-style survey after a key touchpoint to measure satisfaction and route promoters vs detractors.",
+      "Lancez une enquête rapide de type NPS après un point de contact clé pour mesurer la satisfaction et orienter promoteurs et détracteurs.",
     category: "Automation",
     icon: Heart,
     iconColor: "text-red-600",
@@ -1409,7 +1409,7 @@ const templates: FlowTemplate[] = [
         type: "trigger",
         position: { x: 250, y: 0 },
         data: {
-          label: "Survey trigger",
+          label: "Déclencheur sondage",
           triggerType: "keyword",
           config: { keywords: ["survey", "nps", "rate us"] },
         },
@@ -1419,28 +1419,28 @@ const templates: FlowTemplate[] = [
         type: "sendMessage",
         position: { x: 250, y: 150 },
         data: {
-          label: "NPS question",
-          text: "Hi {{name}}! Quick question — on a scale of 0-10, how likely are you to recommend us to a friend?\n\n(Reply with a number)",
+          label: "Question NPS",
+          text: "Bonjour {{name}} ! Petite question : sur une échelle de 0 à 10, quelle est la probabilité que vous nous recommandiez à un ami ?\n\n(Répondez avec un nombre)",
         },
       },
       {
         id: "wait-nps",
         type: "smartDelay",
         position: { x: 250, y: 280 },
-        data: { label: "Wait for score", waitForInput: true, timeout: 600 },
+        data: { label: "Attendre le score", waitForInput: true, timeout: 600 },
       },
       {
         id: "set-nps",
         type: "setCustomField",
         position: { x: 250, y: 400 },
-        data: { label: "Save NPS score", fieldSlug: "nps_score", value: "{{last_message}}" },
+        data: { label: "Enregistrer le score NPS", fieldSlug: "nps_score", value: "{{last_message}}" },
       },
       {
         id: "condition-1",
         type: "condition",
         position: { x: 250, y: 530 },
         data: {
-          label: "Promoter (9-10)?",
+          label: "Promoteur (9-10) ?",
           conditions: [{ id: "c1", field: "nps_score", operator: "greater_than", value: "8" }],
         },
       },
@@ -1449,8 +1449,8 @@ const templates: FlowTemplate[] = [
         type: "sendMessage",
         position: { x: 50, y: 690 },
         data: {
-          label: "Promoter path",
-          text: "Wow, thank you! 🙌 Would you mind sharing a quick review? It really helps us grow!\n\n👉 https://g.page/review",
+          label: "Parcours promoteur",
+          text: "Waouh, merci ! 🙌 Pourriez-vous partager un court avis ? Cela nous aide énormément à grandir !\n\n👉 https://g.page/review",
         },
       },
       {
@@ -1458,8 +1458,8 @@ const templates: FlowTemplate[] = [
         type: "sendMessage",
         position: { x: 450, y: 690 },
         data: {
-          label: "Detractor path",
-          text: "We're sorry to hear that! 😔 Your feedback means a lot. Can you tell us what we can do better? A team member will follow up personally.",
+          label: "Parcours détracteur",
+          text: "Nous sommes désolés de l'apprendre ! 😔 Votre retour compte beaucoup. Pouvez-vous nous dire ce que nous pouvons améliorer ? Un membre de l'équipe vous recontactera personnellement.",
         },
       },
     ],
@@ -1473,6 +1473,16 @@ const templates: FlowTemplate[] = [
     ],
   },
 ];
+
+const CATEGORY_LABELS: Record<string, string> = {
+  All: "Tous",
+  Onboarding: "Accueil",
+  Support: "Support",
+  Marketing: "Marketing",
+  "E-commerce": "E-commerce",
+  Engagement: "Engagement",
+  Automation: "Automatisation",
+};
 
 const CATEGORIES = ["All", ...Array.from(new Set(templates.map((t) => t.category)))];
 
@@ -1503,7 +1513,7 @@ export function TemplatesView({ workspaceId }: { workspaceId: string }) {
       });
 
       if (!res.ok) {
-        throw new Error("Failed to create flow");
+        throw new Error("Impossible de créer le flux");
       }
 
       const flow = await res.json();
@@ -1536,21 +1546,21 @@ export function TemplatesView({ workspaceId }: { workspaceId: string }) {
                 className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Flows
+                Flux
               </Link>
             </div>
-            <h1 className="text-2xl font-bold">Flow Templates</h1>
+            <h1 className="text-2xl font-bold">Modèles de flux</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              {templates.length} ready-to-use flows — start with a template and customise it to your needs
+              {templates.length} flux prêts à l'emploi. Démarrez avec un modèle et adaptez-le à vos besoins.
             </p>
           </div>
           <button
             disabled
             className="inline-flex w-fit items-center gap-2 rounded-lg border border-dashed border-border px-4 py-2 text-sm font-medium text-muted-foreground cursor-not-allowed opacity-60"
-            title="Coming soon"
+            title="Bientôt disponible"
           >
             <BookmarkPlus className="h-4 w-4" />
-            Save Current Flow as Template
+            Enregistrer le flux actuel comme modèle
           </button>
         </div>
 
@@ -1562,7 +1572,7 @@ export function TemplatesView({ workspaceId }: { workspaceId: string }) {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search templates…"
+              placeholder="Rechercher des modèles..."
               className="h-9 rounded-lg border border-border bg-background pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-primary/50 w-56"
             />
           </div>
@@ -1578,7 +1588,7 @@ export function TemplatesView({ workspaceId }: { workspaceId: string }) {
                     : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 )}
               >
-                {cat}
+                {CATEGORY_LABELS[cat] ?? cat}
               </button>
             ))}
           </div>
@@ -1590,8 +1600,8 @@ export function TemplatesView({ workspaceId }: { workspaceId: string }) {
         {filteredTemplates.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <Search className="h-10 w-10 text-muted-foreground mb-4 opacity-40" />
-            <p className="text-sm font-medium text-muted-foreground">No templates found</p>
-            <p className="mt-1 text-xs text-muted-foreground">Try adjusting your search or filter</p>
+            <p className="text-sm font-medium text-muted-foreground">Aucun modèle trouvé</p>
+            <p className="mt-1 text-xs text-muted-foreground">Essayez de modifier votre recherche ou votre filtre</p>
           </div>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -1616,7 +1626,7 @@ export function TemplatesView({ workspaceId }: { workspaceId: string }) {
                       <Icon className={cn("h-5 w-5", template.iconColor)} />
                     </div>
                     <span className="rounded-full bg-muted px-2.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                      {template.category}
+                      {CATEGORY_LABELS[template.category] ?? template.category}
                     </span>
                   </div>
 
@@ -1632,7 +1642,7 @@ export function TemplatesView({ workspaceId }: { workspaceId: string }) {
                   <div className="mt-4 flex items-center gap-1.5 text-xs text-muted-foreground">
                     <GitBranch className="h-3 w-3" />
                     <span>
-                      {nodeCount} {nodeCount === 1 ? "node" : "nodes"}
+                      {nodeCount} {nodeCount === 1 ? "bloc" : "blocs"}
                     </span>
                   </div>
 
@@ -1645,12 +1655,12 @@ export function TemplatesView({ workspaceId }: { workspaceId: string }) {
                     {isCreating ? (
                       <span className="inline-flex items-center gap-2">
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        Creating...
+                        Création...
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-2">
                         <Sparkles className="h-3.5 w-3.5" />
-                        Use Template
+                        Utiliser le modèle
                       </span>
                     )}
                   </button>

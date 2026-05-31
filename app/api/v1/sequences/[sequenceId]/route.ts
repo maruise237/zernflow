@@ -17,7 +17,7 @@ export async function PATCH(
     .eq("workspace_id", workspace.id)
     .single();
 
-  if (!existing) return NextResponse.json({ error: "Sequence not found" }, { status: 404 });
+  if (!existing) return NextResponse.json({ error: "Séquence introuvable" }, { status: 404 });
 
   const update: Database["public"]["Tables"]["sequences"]["Update"] = {
     updated_at: new Date().toISOString(),

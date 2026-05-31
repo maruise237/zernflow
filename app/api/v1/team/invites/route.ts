@@ -28,14 +28,14 @@ export async function POST(request: NextRequest) {
 
   if (!email || !email.includes("@")) {
     return NextResponse.json(
-      { error: "A valid email address is required" },
+      { error: "Une adresse email valide est requise" },
       { status: 400 }
     );
   }
 
   if (!["member", "admin"].includes(role)) {
     return NextResponse.json(
-      { error: "Invalid role. Must be member or admin." },
+      { error: "Rôle invalide. Il doit être membre ou admin." },
       { status: 400 }
     );
   }

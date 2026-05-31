@@ -9,12 +9,12 @@ export async function POST(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
 
   const body = await request.json();
   const workspaceId = String(body.workspaceId || "");
   if (!workspaceId) {
-    return NextResponse.json({ error: "Workspace is required" }, { status: 400 });
+    return NextResponse.json({ error: "L'espace de travail est requis" }, { status: 400 });
   }
 
   const { data: membership } = await supabase
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (!membership) {
-    return NextResponse.json({ error: "No access to this workspace" }, { status: 403 });
+    return NextResponse.json({ error: "Aucun accès à cet espace de travail" }, { status: 403 });
   }
 
   const cookieStore = await cookies();

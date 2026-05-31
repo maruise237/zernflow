@@ -10,7 +10,7 @@ export async function POST(
   const body = await request.json().catch(() => ({}));
 
   if (body.action !== "accept") {
-    return NextResponse.json({ error: "Unsupported action" }, { status: 400 });
+    return NextResponse.json({ error: "Action non prise en charge" }, { status: 400 });
   }
 
   const supabase = await createClient();
@@ -18,7 +18,7 @@ export async function POST(
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
 
   const serviceClient = await createServiceClient();
   const { data: invite, error: fetchError } = await serviceClient
@@ -28,7 +28,7 @@ export async function POST(
     .single();
 
   if (fetchError || !invite) {
-    return NextResponse.json({ error: "Invite not found" }, { status: 404 });
+    return NextResponse.json({ error: "Invitation introuvable" }, { status: 404 });
   }
 
   if (invite.status !== "pending") {
@@ -93,7 +93,7 @@ export async function DELETE(
     .single();
 
   if (fetchError || !invite) {
-    return NextResponse.json({ error: "Invite not found" }, { status: 404 });
+    return NextResponse.json({ error: "Invitation introuvable" }, { status: 404 });
   }
 
   const { data: membership } = await supabase

@@ -28,7 +28,7 @@ interface SequenceEditorProps {
 
 const statusConfig = {
   draft: {
-    label: "Draft",
+    label: "Brouillon",
     classes: "bg-muted text-muted-foreground",
   },
   active: {
@@ -37,7 +37,7 @@ const statusConfig = {
       "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400",
   },
   paused: {
-    label: "Paused",
+    label: "En pause",
     classes:
       "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
   },
@@ -77,7 +77,7 @@ export function SequenceEditor({ sequence }: SequenceEditorProps) {
     if (!res.ok || result.error) {
       setError(result.error);
     } else {
-      setSuccess("Saved");
+      setSuccess("Enregistré");
       setTimeout(() => setSuccess(null), 2000);
     }
     setSaving(false);
@@ -132,7 +132,7 @@ export function SequenceEditor({ sequence }: SequenceEditorProps) {
       setStatus("paused");
     } else {
       if (!hasMessageStep) {
-        setError("Add at least one message step before activating");
+        setError("Ajoutez au moins une étape de message avant l'activation");
         return;
       }
       setStatus("active");
@@ -159,7 +159,7 @@ export function SequenceEditor({ sequence }: SequenceEditorProps) {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="text-2xl font-bold bg-transparent border-none outline-none focus:ring-0 p-0"
-                placeholder="Sequence name"
+                placeholder="Nom de la séquence"
               />
               <span
                 className={cn(
@@ -181,7 +181,7 @@ export function SequenceEditor({ sequence }: SequenceEditorProps) {
                   : "border border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
               )}
             >
-              {status === "active" ? "Pause" : "Activate"}
+              {status === "active" ? "Mettre en pause" : "Activer"}
             </button>
             <button
               onClick={handleSave}
@@ -189,21 +189,21 @@ export function SequenceEditor({ sequence }: SequenceEditorProps) {
               className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
             >
               {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-              {saving ? "Saving..." : "Save"}
+              {saving ? "Enregistrement..." : "Enregistrer"}
             </button>
             <button
               onClick={() => setConfirmDelete(true)}
               disabled={deleting}
               className="rounded-lg p-2 text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
-              title="Delete sequence"
+              title="Supprimer la séquence"
             >
               <Trash2 className="h-4 w-4" />
             </button>
             <ConfirmDialog
               open={confirmDelete}
-              title="Delete sequence"
-              message="Are you sure you want to delete this sequence? This action cannot be undone."
-              confirmLabel="Delete"
+              title="Supprimer la séquence"
+              message="Voulez-vous vraiment supprimer cette séquence ? Cette action est définitive."
+              confirmLabel="Supprimer"
               destructive
               onConfirm={() => {
                 setConfirmDelete(false);
@@ -226,7 +226,7 @@ export function SequenceEditor({ sequence }: SequenceEditorProps) {
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="What is this sequence for?"
+              placeholder="À quoi sert cette séquence ?"
               rows={2}
               className="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
@@ -248,7 +248,7 @@ export function SequenceEditor({ sequence }: SequenceEditorProps) {
 
           {/* Steps */}
           <div>
-            <label className="mb-3 block text-sm font-medium">Steps</label>
+            <label className="mb-3 block text-sm font-medium">Étapes</label>
 
             {/* Add button at the top */}
             <AddStepButton onAdd={(type) => addStep(0, type)} />
@@ -256,7 +256,7 @@ export function SequenceEditor({ sequence }: SequenceEditorProps) {
             {steps.length === 0 && (
               <div className="rounded-lg border border-dashed border-border p-8 text-center">
                 <p className="text-sm text-muted-foreground">
-                  No steps yet. Click the + button above to add your first step.
+                  Aucune étape pour le moment. Cliquez sur le bouton + ci-dessus pour ajouter la première.
                 </p>
               </div>
             )}
@@ -310,7 +310,7 @@ function StepCard({
           </div>
           <div>
             <p className="text-sm font-medium">
-              Step {index + 1}: {isMessage ? "Send Message" : "Wait"}
+              Étape {index + 1} : {isMessage ? "Envoyer un message" : "Attendre"}
             </p>
           </div>
         </div>
@@ -327,7 +327,7 @@ function StepCard({
           <textarea
             value={step.content || ""}
             onChange={(e) => onChange({ content: e.target.value })}
-            placeholder="Type your message..."
+            placeholder="Saisissez votre message..."
             rows={3}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           />
@@ -379,7 +379,7 @@ function DelayPicker({
 
   return (
     <div className="flex items-center gap-2">
-      <span className="text-sm text-muted-foreground">Wait for</span>
+      <span className="text-sm text-muted-foreground">Attendre</span>
       <input
         type="number"
         min={1}
@@ -400,8 +400,8 @@ function DelayPicker({
         className="rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
       >
         <option value="minutes">Minutes</option>
-        <option value="hours">Hours</option>
-        <option value="days">Days</option>
+        <option value="hours">Heures</option>
+        <option value="days">Jours</option>
       </select>
     </div>
   );
@@ -436,13 +436,13 @@ function AddStepButton({
             className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent transition-colors"
           >
             <Clock className="h-3 w-3" />
-            Wait
+            Attendre
           </button>
           <button
             onClick={() => setOpen(false)}
             className="rounded-lg px-2 py-1.5 text-xs text-muted-foreground hover:bg-accent"
           >
-            Cancel
+            Annuler
           </button>
         </div>
       ) : (

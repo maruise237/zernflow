@@ -5,6 +5,43 @@ import type { Database, Platform } from "@/lib/types/database";
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 type Channel = Database["public"]["Tables"]["channels"]["Row"];
+type ZernioAccount = {
+  _id?: string;
+  platform?: string;
+  username?: string;
+  displayName?: string;
+  profilePicture?: string | null;
+  enabled?: boolean;
+  isActive?: boolean;
+};
+
+const socialPlatforms = new Set<Platform>([
+  "facebook",
+  "instagram",
+  "twitter",
+  "tiktok",
+  "youtube",
+  "linkedin",
+  "threads",
+  "pinterest",
+  "telegram",
+  "bluesky",
+  "reddit",
+  "whatsapp",
+  "googlebusiness",
+  "snapchat",
+  "discord",
+]);
+
+const inboxPlatforms = new Set<Platform>([
+  "facebook",
+  "instagram",
+  "twitter",
+  "telegram",
+  "bluesky",
+  "reddit",
+  "whatsapp",
+]);
 
 type InboxConversation = {
   id?: string;
@@ -52,6 +89,7 @@ async function syncInboxConversations({
 
   for (const channel of channels) {
     if (!channel.late_account_id) continue;
+    if (!inboxPlatforms.has(channel.platform as Platform)) continue;
 
     try {
       const res = await zernio.messages.listInboxConversations({
@@ -188,7 +226,14 @@ export async function POST() {
 
   try {
     const res = await zernio.accounts.listAccounts();
-    const lateAccounts = res.data?.accounts ?? [];
+    const lateAccounts = ((res.data?.accounts ?? []) as ZernioAccount[]).filter(
+      (account) =>
+        account._id &&
+        account.platform &&
+        socialPlatforms.has(account.platform as Platform) &&
+        account.enabled !== false &&
+        account.isActive !== false
+    );
 
     // Get existing channels for this workspace
     const { data: existingChannels } = await supabase
@@ -201,14 +246,13 @@ export async function POST() {
     );
 
     // The SDK type doesn't declare profilePicture but the API returns it
-    const lateAccountIds = new Set(lateAccounts.map((a: { _id?: string }) => a._id).filter(Boolean));
+    const lateAccountIds = new Set(lateAccounts.map((a) => a._id).filter(Boolean));
     let created = 0;
     let updated = 0;
 
     for (const account of lateAccounts) {
-      if (!account._id) continue;
-      const acc = account as typeof account & { profilePicture?: string };
-      const profilePic = acc.profilePicture || null;
+      if (!account._id || !account.platform) continue;
+      const profilePic = account.profilePicture || null;
 
       const existing = existingByZernioId.get(account._id);
 
@@ -231,7 +275,7 @@ export async function POST() {
       } else {
         await supabase.from("channels").insert({
           workspace_id: workspace.id,
-          platform: account.platform as "facebook" | "instagram" | "twitter" | "telegram" | "bluesky" | "reddit",
+          platform: account.platform as Platform,
           late_account_id: account._id,
           username: account.username || null,
           display_name: account.displayName || account.username || null,

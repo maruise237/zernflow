@@ -22,20 +22,36 @@ const platformLabels: Record<Platform, string> = {
   facebook: "Facebook",
   instagram: "Instagram",
   twitter: "X / Twitter",
+  tiktok: "TikTok",
+  youtube: "YouTube",
+  linkedin: "LinkedIn",
+  threads: "Threads",
+  pinterest: "Pinterest",
   telegram: "Telegram",
   bluesky: "Bluesky",
   reddit: "Reddit",
   whatsapp: "WhatsApp",
+  googlebusiness: "Google Business",
+  snapchat: "Snapchat",
+  discord: "Discord",
 };
 
 const connectablePlatforms: { id: Platform; label: string }[] = [
   { id: "instagram", label: "Instagram" },
   { id: "facebook", label: "Facebook" },
+  { id: "whatsapp", label: "WhatsApp" },
   { id: "twitter", label: "X / Twitter" },
+  { id: "linkedin", label: "LinkedIn" },
+  { id: "tiktok", label: "TikTok" },
+  { id: "youtube", label: "YouTube" },
+  { id: "threads", label: "Threads" },
+  { id: "pinterest", label: "Pinterest" },
   { id: "telegram", label: "Telegram" },
   { id: "bluesky", label: "Bluesky" },
   { id: "reddit", label: "Reddit" },
-  { id: "whatsapp", label: "WhatsApp" },
+  { id: "googlebusiness", label: "Google Business" },
+  { id: "snapchat", label: "Snapchat" },
+  { id: "discord", label: "Discord" },
 ];
 
 function getPlatformLabel(platform: string): string {

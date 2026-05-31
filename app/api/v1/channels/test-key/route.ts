@@ -1,6 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createZernioClient } from "@/lib/zernio-client";
+import type { Platform } from "@/lib/types/database";
+
+const socialPlatforms = new Set<Platform>([
+  "facebook",
+  "instagram",
+  "twitter",
+  "tiktok",
+  "youtube",
+  "linkedin",
+  "threads",
+  "pinterest",
+  "telegram",
+  "bluesky",
+  "reddit",
+  "whatsapp",
+  "googlebusiness",
+  "snapchat",
+  "discord",
+]);
 
 /**
  * POST /api/v1/channels/test-key
@@ -19,11 +38,26 @@ export async function POST(request: NextRequest) {
   }
 
   // Validate the key by listing accounts
-  let accounts: Array<{ _id?: string; platform?: string; username?: string; displayName?: string; profilePicture?: string }>;
+  let accounts: Array<{
+    _id?: string;
+    platform?: string;
+    username?: string;
+    displayName?: string;
+    profilePicture?: string | null;
+    enabled?: boolean;
+    isActive?: boolean;
+  }>;
   try {
     const zernio = createZernioClient(apiKey.trim());
     const res = await zernio.accounts.listAccounts();
-    accounts = (res.data?.accounts ?? []) as typeof accounts;
+    accounts = ((res.data?.accounts ?? []) as typeof accounts).filter(
+      (account) =>
+        account._id &&
+        account.platform &&
+        socialPlatforms.has(account.platform as Platform) &&
+        account.enabled !== false &&
+        account.isActive !== false
+    );
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "Clé API invalide ou erreur de connexion";
@@ -65,7 +99,7 @@ export async function POST(request: NextRequest) {
 
       await supabase.from("channels").insert({
         workspace_id: workspaceId,
-        platform: account.platform as "facebook" | "instagram" | "twitter" | "telegram" | "bluesky" | "reddit",
+        platform: account.platform as Platform,
         late_account_id: account._id,
         username: account.username || null,
         display_name: account.displayName || account.username || null,

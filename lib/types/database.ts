@@ -10,10 +10,18 @@ export type Platform =
   | "facebook"
   | "instagram"
   | "twitter"
+  | "tiktok"
+  | "youtube"
+  | "linkedin"
+  | "threads"
+  | "pinterest"
   | "telegram"
   | "bluesky"
   | "reddit"
-  | "whatsapp";
+  | "whatsapp"
+  | "googlebusiness"
+  | "snapchat"
+  | "discord";
 
 export type FlowStatus = "draft" | "published" | "archived";
 export type ConversationStatus = "open" | "closed" | "snoozed";

@@ -12,6 +12,7 @@ import {
   SiSnapchat,
   SiGoogle,
   SiWhatsapp,
+  SiDiscord,
 } from "@icons-pack/react-simple-icons";
 import { MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -41,12 +42,16 @@ const platformIcons: Record<string, React.ComponentType<{ className?: string; si
   snapchat: SiSnapchat,
   googlebusiness: SiGoogle,
   whatsapp: SiWhatsapp,
+  discord: SiDiscord,
 };
 
 // Brand colors for platforms. Platforms not listed here use text-foreground.
 const platformColors: Record<string, string> = {
   facebook: "#1877F2",
   instagram: "#E4405F",
+  twitter: "#000000",
+  tiktok: "#000000",
+  threads: "#000000",
   telegram: "#26A5E4",
   bluesky: "#0085FF",
   reddit: "#FF4500",

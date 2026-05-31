@@ -1,6 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createZernioClient } from "@/lib/zernio-client";
+import type { Platform } from "@/lib/types/database";
+
+const connectablePlatforms = [
+  "facebook",
+  "instagram",
+  "twitter",
+  "tiktok",
+  "youtube",
+  "linkedin",
+  "threads",
+  "pinterest",
+  "telegram",
+  "bluesky",
+  "reddit",
+  "whatsapp",
+  "googlebusiness",
+  "snapchat",
+  "discord",
+] as const satisfies readonly Platform[];
 
 async function getWorkspace(supabase: Awaited<ReturnType<typeof createClient>>) {
   const {
@@ -41,10 +60,9 @@ export async function POST(request: NextRequest) {
 
   const { platform } = await request.json();
 
-  const supported = ["facebook", "instagram", "twitter", "telegram", "bluesky", "reddit"];
-  if (!platform || !supported.includes(platform)) {
+  if (!platform || !connectablePlatforms.includes(platform)) {
     return NextResponse.json(
-      { error: `Plateforme non prise en charge. Elle doit être l'une de celles-ci : ${supported.join(", ")}` },
+      { error: `Plateforme non prise en charge. Elle doit être l'une de celles-ci : ${connectablePlatforms.join(", ")}` },
       { status: 400 }
     );
   }
@@ -52,17 +70,21 @@ export async function POST(request: NextRequest) {
   const zernio = createZernioClient(workspace.late_api_key_encrypted);
 
   try {
-    // Get profile ID (required by Zernio's connect endpoint)
+    // Get or create a profile ID, required by Zernio's connect endpoint.
     const profilesRes = await zernio.profiles.listProfiles();
-    const profiles = profilesRes.data?.profiles ?? [];
-    if (profiles.length === 0) {
-      return NextResponse.json(
-        { error: "Aucun profil Zernio trouvé. Créez-en d'abord un dans votre tableau de bord Zernio." },
-        { status: 400 }
-      );
+    let profileId = profilesRes.data?.profiles?.[0]?._id;
+    if (!profileId) {
+      const createdProfile = await zernio.profiles.createProfile({
+        body: {
+          name: workspace.name || "ZernFlow",
+          description: "Profil créé automatiquement par ZernFlow",
+        },
+      });
+      profileId = createdProfile.data?.profile?._id;
     }
-
-    const profileId = profiles[0]._id!;
+    if (!profileId) {
+      return NextResponse.json({ error: "Impossible de préparer le profil Zernio" }, { status: 500 });
+    }
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const callbackUrl = `${appUrl}/dashboard/channels/callback`;
 

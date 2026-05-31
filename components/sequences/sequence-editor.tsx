@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { updateSequence, deleteSequence } from "@/lib/actions/sequences";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import type { SequenceStep } from "@/lib/types/database";
 
@@ -63,14 +62,19 @@ export function SequenceEditor({ sequence }: SequenceEditorProps) {
     setError(null);
     setSuccess(null);
 
-    const result = await updateSequence(sequence.id, {
-      name: name.trim(),
-      description: description.trim() || null,
-      steps,
-      status,
+    const res = await fetch(`/api/v1/sequences/${sequence.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: name.trim(),
+        description: description.trim() || null,
+        steps,
+        status,
+      }),
     });
+    const result = await res.json();
 
-    if (result.error) {
+    if (!res.ok || result.error) {
       setError(result.error);
     } else {
       setSuccess("Saved");
@@ -81,8 +85,11 @@ export function SequenceEditor({ sequence }: SequenceEditorProps) {
 
   const handleDelete = useCallback(async () => {
     setDeleting(true);
-    const result = await deleteSequence(sequence.id);
-    if (result.error) {
+    const res = await fetch(`/api/v1/sequences/${sequence.id}`, {
+      method: "DELETE",
+    });
+    const result = await res.json();
+    if (!res.ok || result.error) {
       setError(result.error);
       setDeleting(false);
     } else {

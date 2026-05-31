@@ -3,7 +3,6 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Loader2 } from "lucide-react";
-import { createSequence } from "@/lib/actions/sequences";
 
 export function CreateSequenceButton() {
   const router = useRouter();
@@ -16,9 +15,14 @@ export function CreateSequenceButton() {
     setCreating(true);
 
     try {
-      const result = await createSequence("Untitled Sequence");
+      const res = await fetch("/api/v1/sequences", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "Untitled Sequence" }),
+      });
+      const result = await res.json();
 
-      if (result.error) {
+      if (!res.ok || result.error) {
         console.error("Failed to create sequence:", result.error);
         alert(`Failed to create sequence: ${result.error}`);
         return;

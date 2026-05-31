@@ -16,11 +16,6 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  inviteTeamMember,
-  removeTeamMember,
-  revokeInvite,
-} from "@/lib/actions/team";
 import Link from "next/link";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 
@@ -97,9 +92,14 @@ export function TeamView({
     setInviteError(null);
     setInviteSuccess(false);
 
-    const result = await inviteTeamMember(workspaceId, inviteEmail, inviteRole);
+    const res = await fetch("/api/v1/team/invites", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ workspaceId, email: inviteEmail, role: inviteRole }),
+    });
+    const result = await res.json();
 
-    if (result.error) {
+    if (!res.ok || result.error) {
       setInviteError(result.error);
     } else if (result.invite) {
       setInvites((prev) => [result.invite as PendingInvite, ...prev]);
@@ -115,9 +115,14 @@ export function TeamView({
   async function handleRemove(userId: string) {
     setRemovingId(userId);
 
-    const result = await removeTeamMember(workspaceId, userId);
+    const res = await fetch(`/api/v1/team/members/${userId}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ workspaceId }),
+    });
+    const result = await res.json();
 
-    if (!result.error) {
+    if (res.ok && !result.error) {
       setMembers((prev) => prev.filter((m) => m.userId !== userId));
     }
 
@@ -127,9 +132,12 @@ export function TeamView({
   async function handleRevoke(inviteId: string) {
     setRevokingId(inviteId);
 
-    const result = await revokeInvite(inviteId);
+    const res = await fetch(`/api/v1/team/invites/${inviteId}`, {
+      method: "DELETE",
+    });
+    const result = await res.json();
 
-    if (!result.error) {
+    if (res.ok && !result.error) {
       setInvites((prev) => prev.filter((i) => i.id !== inviteId));
     }
 

@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Users, XCircle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { cancelEnrollment } from "@/lib/actions/sequences";
 
 interface Enrollment {
   id: string;
@@ -50,9 +49,12 @@ export function EnrollmentList({
 
   async function handleCancel(enrollmentId: string) {
     setCancelling(enrollmentId);
-    const result = await cancelEnrollment(enrollmentId);
+    const res = await fetch(`/api/v1/sequences/enrollments/${enrollmentId}`, {
+      method: "PATCH",
+    });
+    const result = await res.json();
 
-    if (!result.error) {
+    if (res.ok && !result.error) {
       setEnrollments((prev) =>
         prev.map((e) =>
           e.id === enrollmentId ? { ...e, status: "cancelled" as const } : e

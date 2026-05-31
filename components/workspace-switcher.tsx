@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, Plus, Loader2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { switchWorkspace, createWorkspace } from "@/lib/actions/workspace";
 
 interface WorkspaceItem {
   id: string;
@@ -56,18 +55,29 @@ export function WorkspaceSwitcher({
       return;
     }
     setSwitching(workspaceId);
-    await switchWorkspace(workspaceId);
-    router.refresh();
-    setOpen(false);
-    setSwitching(null);
+    try {
+      await fetch("/api/v1/workspaces/switch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ workspaceId }),
+      });
+      router.refresh();
+      setOpen(false);
+    } finally {
+      setSwitching(null);
+    }
   }
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     if (!newName.trim()) return;
     setSwitching("new");
-    const result = await createWorkspace(newName.trim());
-    if (result.ok) {
+    const res = await fetch("/api/v1/workspaces", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: newName.trim() }),
+    });
+    if (res.ok) {
       router.refresh();
       setOpen(false);
       setCreating(false);

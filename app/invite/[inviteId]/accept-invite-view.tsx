@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Users, Crown, Shield, User, Loader2 } from "lucide-react";
-import { acceptInvite } from "@/lib/actions/team";
 import Link from "next/link";
 
 const roleIcons: Record<string, React.ReactNode> = {
@@ -42,9 +41,14 @@ export function AcceptInviteView({
     setAccepting(true);
     setError(null);
 
-    const result = await acceptInvite(inviteId);
+    const res = await fetch(`/api/v1/team/invites/${inviteId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "accept" }),
+    });
+    const result = await res.json();
 
-    if (result.error) {
+    if (!res.ok || result.error) {
       setError(result.error);
       setAccepting(false);
       return;

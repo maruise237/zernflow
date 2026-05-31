@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
-import { executeFlow } from "@/lib/flow-engine/engine";
+import { resumeDelayedFlow } from "@/lib/flow-engine/engine";
 import type { Json } from "@/lib/types/database";
 
 /**
@@ -99,27 +99,7 @@ async function processJob(
         lateAccountId?: string | null;
       };
 
-      // Check if session is still active
-      const { data: session } = await supabase
-        .from("flow_sessions")
-        .select("*")
-        .eq("id", payload.sessionId)
-        .eq("status", "active")
-        .single();
-
-      if (!session) return; // Session was cancelled/completed
-
-      await executeFlow(supabase, {
-        triggerId: "",
-        flowId: payload.flowId,
-        channelId: payload.channelId,
-        contactId: payload.contactId,
-        conversationId: payload.conversationId,
-        workspaceId: payload.workspaceId,
-        lateConversationId: payload.lateConversationId || undefined,
-        lateAccountId: payload.lateAccountId || undefined,
-        incomingMessage: {},
-      });
+      await resumeDelayedFlow(supabase, payload);
       break;
     }
 

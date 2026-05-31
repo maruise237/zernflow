@@ -115,6 +115,80 @@ export async function executeFlow(
   await traverseNodes(supabase, session.id, startNode, nodes, edges, context, 0);
 }
 
+export async function resumeDelayedFlow(
+  supabase: SupabaseClient<Database>,
+  payload: {
+    sessionId: string;
+    flowId: string;
+    channelId: string;
+    contactId: string;
+    conversationId: string;
+    workspaceId: string;
+    nodeId: string;
+    lateConversationId?: string | null;
+    lateAccountId?: string | null;
+  }
+) {
+  const { data: session } = await supabase
+    .from("flow_sessions")
+    .select("*")
+    .eq("id", payload.sessionId)
+    .eq("status", "active")
+    .single();
+
+  if (!session) return;
+
+  const { data: flow } = await supabase
+    .from("flows")
+    .select("*")
+    .eq("id", payload.flowId)
+    .single();
+
+  if (!flow) return;
+
+  const nodes = flow.nodes as unknown as FlowNode[];
+  const edges = flow.edges as unknown as FlowEdge[];
+  const currentNodeId = session.current_node_id || payload.nodeId;
+  const nextEdge = edges.find((e) => e.source === currentNodeId);
+
+  if (!nextEdge) {
+    await completeSession(supabase, session.id);
+    return;
+  }
+
+  const nextNode = nodes.find((n) => n.id === nextEdge.target);
+  if (!nextNode) {
+    await completeSession(supabase, session.id);
+    return;
+  }
+
+  await supabase
+    .from("flow_sessions")
+    .update({ waiting_until: null })
+    .eq("id", session.id);
+
+  await traverseNodes(
+    supabase,
+    session.id,
+    nextNode,
+    nodes,
+    edges,
+    {
+      triggerId: "",
+      flowId: payload.flowId,
+      channelId: payload.channelId,
+      contactId: payload.contactId,
+      conversationId: payload.conversationId,
+      workspaceId: payload.workspaceId,
+      lateConversationId: payload.lateConversationId || undefined,
+      lateAccountId: payload.lateAccountId || undefined,
+      incomingMessage: {},
+      variables: (session.variables as Record<string, string>) || {},
+    },
+    0
+  );
+}
+
 const MAX_TRAVERSAL_DEPTH = 50;
 
 async function resumeSession(

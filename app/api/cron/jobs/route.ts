@@ -5,7 +5,7 @@ import type { Json } from "@/lib/types/database";
 
 /**
  * Cron job handler that processes scheduled jobs.
- * Call via Vercel Cron or external cron every 10-30 seconds.
+ * Call via Vercel Cron or external cron every minute.
  * GET /api/cron/jobs?key=CRON_SECRET
  */
 export async function GET(request: NextRequest) {
@@ -21,14 +21,11 @@ export async function GET(request: NextRequest) {
 
   const supabase = await createServiceClient();
 
-  // Pick up pending jobs that are due
-  const { data: jobs, error } = await supabase
-    .from("scheduled_jobs")
-    .select("*")
-    .eq("status", "pending")
-    .lte("run_at", new Date().toISOString())
-    .order("run_at", { ascending: true })
-    .limit(20);
+  // Atomically claim due jobs in Postgres so overlapping cron invocations
+  // cannot process the same delayed flow or broadcast twice.
+  const { data: jobs, error } = await supabase.rpc("claim_due_scheduled_jobs", {
+    batch_size: 20,
+  });
 
   if (error || !jobs) {
     return NextResponse.json({ error: "Failed to fetch jobs" }, { status: 500 });
@@ -38,32 +35,29 @@ export async function GET(request: NextRequest) {
   let failed = 0;
 
   for (const job of jobs) {
-    // Mark as processing
-    await supabase
-      .from("scheduled_jobs")
-      .update({ status: "processing", attempts: job.attempts + 1 })
-      .eq("id", job.id)
-      .eq("status", "pending"); // Optimistic lock
-
     try {
       await processJob(supabase, job);
       await supabase
         .from("scheduled_jobs")
-        .update({ status: "completed" })
+        .update({ status: "completed", locked_at: null })
         .eq("id", job.id);
       processed++;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       const maxAttempts = 3;
 
-      if (job.attempts + 1 >= maxAttempts) {
+      if (job.attempts >= maxAttempts) {
         await supabase
           .from("scheduled_jobs")
-          .update({ status: "failed", last_error: errorMessage })
+          .update({
+            status: "failed",
+            last_error: errorMessage,
+            locked_at: null,
+          })
           .eq("id", job.id);
       } else {
         // Retry with backoff
-        const backoffMs = Math.pow(2, job.attempts + 1) * 5000;
+        const backoffMs = Math.pow(2, job.attempts) * 5000;
         const retryAt = new Date(Date.now() + backoffMs).toISOString();
         await supabase
           .from("scheduled_jobs")
@@ -71,6 +65,7 @@ export async function GET(request: NextRequest) {
             status: "pending",
             run_at: retryAt,
             last_error: errorMessage,
+            locked_at: null,
           })
           .eq("id", job.id);
       }

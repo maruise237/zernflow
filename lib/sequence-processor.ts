@@ -9,13 +9,12 @@ import type { SequenceStep } from "@/lib/types/database";
 export async function processSequenceSteps() {
   const supabase = await createServiceClient();
 
-  // Fetch enrollments that are due
-  const { data: enrollments, error } = await supabase
-    .from("sequence_enrollments")
-    .select("*, sequences(*)")
-    .eq("status", "active")
-    .lte("next_step_at", new Date().toISOString())
-    .limit(50);
+  // Atomically claim due enrollments so overlapping cron invocations do not
+  // send the same sequence step twice.
+  const { data: enrollments, error } = await supabase.rpc(
+    "claim_due_sequence_enrollments",
+    { batch_size: 50 }
+  );
 
   if (error || !enrollments) {
     console.error("Failed to fetch sequence enrollments:", error);
@@ -34,6 +33,11 @@ export async function processSequenceSteps() {
         `Failed to process enrollment ${enrollment.id}:`,
         err instanceof Error ? err.message : err
       );
+      await supabase
+        .from("sequence_enrollments")
+        .update({ status: "active", locked_at: null })
+        .eq("id", enrollment.id)
+        .eq("status", "processing");
       failed++;
     }
   }
@@ -49,25 +53,21 @@ async function processEnrollment(
     contact_id: string;
     channel_id: string;
     current_step_index: number;
-    sequences: {
-      id: string;
-      workspace_id: string;
-      steps: unknown;
-      status: string;
-    } | null;
+    sequence_workspace_id: string;
+    sequence_steps: unknown;
+    sequence_status: string;
   }
 ) {
-  const sequence = enrollment.sequences;
-  if (!sequence || sequence.status !== "active") {
+  if (enrollment.sequence_status !== "active") {
     // Sequence was paused/deleted, cancel enrollment
     await supabase
       .from("sequence_enrollments")
-      .update({ status: "cancelled" })
+      .update({ status: "cancelled", locked_at: null })
       .eq("id", enrollment.id);
     return;
   }
 
-  const steps = (sequence.steps as SequenceStep[]) || [];
+  const steps = (enrollment.sequence_steps as SequenceStep[]) || [];
   const stepIndex = enrollment.current_step_index;
 
   if (stepIndex >= steps.length) {
@@ -77,6 +77,7 @@ async function processEnrollment(
       .update({
         status: "completed",
         completed_at: new Date().toISOString(),
+        locked_at: null,
       })
       .eq("id", enrollment.id);
     return;
@@ -87,7 +88,7 @@ async function processEnrollment(
   if (currentStep.type === "message") {
     await sendSequenceMessage(
       supabase,
-      sequence.workspace_id,
+      enrollment.sequence_workspace_id,
       enrollment.contact_id,
       enrollment.channel_id,
       currentStep.content || ""
@@ -107,6 +108,7 @@ async function processEnrollment(
         status: "completed",
         completed_at: new Date().toISOString(),
         next_step_at: null,
+        locked_at: null,
       })
       .eq("id", enrollment.id);
     return;
@@ -129,7 +131,9 @@ async function processEnrollment(
     .from("sequence_enrollments")
     .update({
       current_step_index: nextIndex,
+      status: "active",
       next_step_at: nextStepAt,
+      locked_at: null,
     })
     .eq("id", enrollment.id);
 }

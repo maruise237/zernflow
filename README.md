@@ -54,7 +54,7 @@ npm install
 Create a free project at [supabase.com](https://supabase.com). Then run the SQL migrations in the Supabase SQL editor:
 
 ```bash
-# Run each file in supabase/migrations/ in order (00001 through 00009)
+# Run each file in supabase/migrations/ in order
 ```
 
 3. **Configure environment**
@@ -74,6 +74,17 @@ CRON_SECRET=your-cron-secret              # For sequence processor + job schedul
 ```
 
 After starting the app, go to **Settings** to enter your Zernio API key and (optionally) AI Gateway key.
+
+### Dokploy scheduled jobs
+
+If you deploy with Dokploy, `vercel.json` cron entries are not used. Configure two Dokploy Application Jobs after deployment:
+
+```bash
+npm run cron:jobs
+npm run cron:sequences
+```
+
+Both can run every minute (`* * * * *`) and require `CRON_SECRET`. See [docs/dokploy-schedules.md](docs/dokploy-schedules.md).
 
 4. **Run**
 

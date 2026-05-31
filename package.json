@@ -6,6 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
+    "cron:jobs": "node scripts/run-cron.mjs jobs",
+    "cron:sequences": "node scripts/run-cron.mjs sequences",
     "lint": "next lint"
   },
   "dependencies": {

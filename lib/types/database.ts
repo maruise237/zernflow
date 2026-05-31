@@ -67,7 +67,11 @@ export type NodeType =
   | "enrollSequence";
 
 export type SequenceStatus = "draft" | "active" | "paused";
-export type SequenceEnrollmentStatus = "active" | "completed" | "cancelled";
+export type SequenceEnrollmentStatus =
+  | "active"
+  | "processing"
+  | "completed"
+  | "cancelled";
 
 export interface SequenceStep {
   type: "message" | "delay";
@@ -825,6 +829,7 @@ export interface Database {
           attempts: number;
           last_error: string | null;
           created_at: string;
+          locked_at: string | null;
         };
         Insert: {
           id?: string;
@@ -835,12 +840,14 @@ export interface Database {
           attempts?: number;
           last_error?: string | null;
           created_at?: string;
+          locked_at?: string | null;
         };
         Update: {
           status?: JobStatus;
           run_at?: string;
           attempts?: number;
           last_error?: string | null;
+          locked_at?: string | null;
         };
         Relationships: [];
       };
@@ -1029,6 +1036,7 @@ export interface Database {
           enrolled_at: string;
           next_step_at: string | null;
           completed_at: string | null;
+          locked_at: string | null;
         };
         Insert: {
           id?: string;
@@ -1040,12 +1048,14 @@ export interface Database {
           enrolled_at?: string;
           next_step_at?: string | null;
           completed_at?: string | null;
+          locked_at?: string | null;
         };
         Update: {
           current_step_index?: number;
           status?: SequenceEnrollmentStatus;
           next_step_at?: string | null;
           completed_at?: string | null;
+          locked_at?: string | null;
         };
         Relationships: [
           {
@@ -1094,6 +1104,32 @@ export interface Database {
           b_id: string;
         };
         Returns: undefined;
+      };
+      claim_due_scheduled_jobs: {
+        Args: {
+          batch_size?: number;
+        };
+        Returns: Database["public"]["Tables"]["scheduled_jobs"]["Row"][];
+      };
+      claim_due_sequence_enrollments: {
+        Args: {
+          batch_size?: number;
+        };
+        Returns: Array<{
+          id: string;
+          sequence_id: string;
+          contact_id: string;
+          channel_id: string;
+          current_step_index: number;
+          status: SequenceEnrollmentStatus;
+          enrolled_at: string;
+          next_step_at: string | null;
+          completed_at: string | null;
+          locked_at: string | null;
+          sequence_workspace_id: string;
+          sequence_steps: Json;
+          sequence_status: SequenceStatus;
+        }>;
       };
     };
     Enums: {

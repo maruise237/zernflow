@@ -1,6 +1,23 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createZernioClient } from "@/lib/zernio-client";
+import type { Database, Platform } from "@/lib/types/database";
+
+type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
+type Channel = Database["public"]["Tables"]["channels"]["Row"];
+
+type InboxConversation = {
+  id?: string;
+  platform?: string;
+  accountId?: string;
+  participantId?: string;
+  participantName?: string | null;
+  participantPicture?: string | null;
+  lastMessage?: string | null;
+  updatedTime?: string | null;
+  status?: "active" | "archived";
+  unreadCount?: number | null;
+};
 
 async function getWorkspace(supabase: Awaited<ReturnType<typeof createClient>>) {
   const {
@@ -17,6 +34,134 @@ async function getWorkspace(supabase: Awaited<ReturnType<typeof createClient>>) 
 
   if (!membership?.workspaces) return null;
   return membership.workspaces;
+}
+
+async function syncInboxConversations({
+  supabase,
+  zernio,
+  workspaceId,
+  channels,
+}: {
+  supabase: SupabaseClient;
+  zernio: ReturnType<typeof createZernioClient>;
+  workspaceId: string;
+  channels: Channel[];
+}) {
+  let synced = 0;
+  let failed = 0;
+
+  for (const channel of channels) {
+    if (!channel.late_account_id) continue;
+
+    try {
+      const res = await zernio.messages.listInboxConversations({
+        query: {
+          accountId: channel.late_account_id,
+          limit: 50,
+          sortOrder: "desc",
+        },
+      });
+      const inboxConversations = ((res.data as any)?.data ?? []) as InboxConversation[];
+
+      for (const inboxConversation of inboxConversations) {
+        if (!inboxConversation.id || !inboxConversation.participantId) continue;
+
+        const participantName =
+          inboxConversation.participantName ||
+          inboxConversation.participantId;
+        const lastMessageAt =
+          inboxConversation.updatedTime || new Date().toISOString();
+
+        const { data: contactChannel } = await supabase
+          .from("contact_channels")
+          .select("contact_id")
+          .eq("channel_id", channel.id)
+          .eq("platform_sender_id", inboxConversation.participantId)
+          .maybeSingle();
+
+        let contactId = contactChannel?.contact_id ?? null;
+
+        if (contactId) {
+          await supabase
+            .from("contacts")
+            .update({
+              display_name: participantName,
+              avatar_url: inboxConversation.participantPicture ?? null,
+              last_interaction_at: lastMessageAt,
+            })
+            .eq("id", contactId);
+        } else {
+          const { data: newContact } = await supabase
+            .from("contacts")
+            .insert({
+              workspace_id: workspaceId,
+              display_name: participantName,
+              avatar_url: inboxConversation.participantPicture ?? null,
+              last_interaction_at: lastMessageAt,
+            })
+            .select("id")
+            .single();
+
+          if (!newContact) continue;
+          contactId = newContact.id;
+
+          await supabase.from("contact_channels").insert({
+            contact_id: contactId,
+            channel_id: channel.id,
+            platform_sender_id: inboxConversation.participantId,
+            platform_username: null,
+          });
+        }
+
+        const conversationStatus =
+          inboxConversation.status === "archived" ? "closed" : "open";
+
+        const { data: existingConversation } = await supabase
+          .from("conversations")
+          .select("id, status")
+          .eq("channel_id", channel.id)
+          .eq("contact_id", contactId)
+          .maybeSingle();
+
+        if (existingConversation) {
+          await supabase
+            .from("conversations")
+            .update({
+              late_conversation_id: inboxConversation.id,
+              last_message_at: lastMessageAt,
+              last_message_preview: inboxConversation.lastMessage ?? null,
+              unread_count: inboxConversation.unreadCount ?? 0,
+              ...(existingConversation.status === "snoozed"
+                ? {}
+                : { status: conversationStatus }),
+            })
+            .eq("id", existingConversation.id);
+        } else {
+          await supabase.from("conversations").insert({
+            workspace_id: workspaceId,
+            channel_id: channel.id,
+            contact_id: contactId,
+            platform: channel.platform as Platform,
+            late_conversation_id: inboxConversation.id,
+            status: conversationStatus,
+            last_message_at: lastMessageAt,
+            last_message_preview: inboxConversation.lastMessage ?? null,
+            unread_count: inboxConversation.unreadCount ?? 0,
+          });
+        }
+
+        synced++;
+      }
+    } catch (error) {
+      failed++;
+      console.error(
+        `Failed to sync inbox conversations for channel ${channel.id}:`,
+        error
+      );
+    }
+  }
+
+  return { synced, failed };
 }
 
 /**
@@ -109,6 +254,19 @@ export async function POST() {
       }
     }
 
+    const { data: activeChannels } = await supabase
+      .from("channels")
+      .select("*")
+      .eq("workspace_id", workspace.id)
+      .eq("is_active", true);
+
+    const inbox = await syncInboxConversations({
+      supabase,
+      zernio,
+      workspaceId: workspace.id,
+      channels: activeChannels ?? [],
+    });
+
     // Return updated channel list
     const { data: channels } = await supabase
       .from("channels")
@@ -118,7 +276,7 @@ export async function POST() {
 
     return NextResponse.json({
       channels: channels ?? [],
-      synced: { created, updated, deactivated },
+      synced: { created, updated, deactivated, inbox },
     });
   } catch (error) {
     console.error("Failed to sync channels:", error);

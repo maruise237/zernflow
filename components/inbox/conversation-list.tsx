@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, MessageSquare } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Search, MessageSquare, RefreshCw } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { PlatformIcon } from "@/components/platform-icon";
@@ -39,9 +40,12 @@ export function ConversationList({
   selectedId: string | null;
   onSelect: (conversation: Conversation) => void;
 }) {
+  const router = useRouter();
   const [conversations, setConversations] = useState(initialConversations);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<ConversationStatus | "all">("open");
+  const [syncing, setSyncing] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   useEffect(() => {
     setConversations(initialConversations);
@@ -105,15 +109,49 @@ export function ConversationList({
     return true;
   });
 
+  async function handleSync() {
+    setSyncing(true);
+    setSyncError(null);
+    try {
+      const res = await fetch("/api/v1/channels/sync", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Impossible de synchroniser l'inbox");
+      }
+      router.refresh();
+    } catch (err) {
+      setSyncError(err instanceof Error ? err.message : "Erreur de synchronisation");
+    } finally {
+      setSyncing(false);
+    }
+  }
+
   return (
     <div className="flex h-full flex-col border-r border-border bg-background">
       {/* Header */}
       <div className="flex h-14 items-center justify-between border-b border-border px-4">
         <h2 className="text-sm font-semibold">Boîte de réception</h2>
-        <span className="text-xs text-muted-foreground">
-          {filtered.length} conversation{filtered.length !== 1 ? "s" : ""}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">
+            {filtered.length} conversation{filtered.length !== 1 ? "s" : ""}
+          </span>
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            title="Synchroniser l'inbox"
+            aria-label="Synchroniser l'inbox"
+            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+          >
+            <RefreshCw className={cn("h-3.5 w-3.5", syncing && "animate-spin")} />
+          </button>
+        </div>
       </div>
+
+      {syncError && (
+        <div className="border-b border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+          {syncError}
+        </div>
+      )}
 
       {/* Search */}
       <div className="p-3">

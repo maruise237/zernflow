@@ -53,13 +53,17 @@ export async function GET(request: NextRequest) {
       query: { accountId: channel.late_account_id },
     });
 
-    const zernioMessages = (res.data as any)?.data ?? [];
+    const responseData = res.data as any;
+    const zernioMessages = responseData?.messages ?? responseData?.data ?? [];
 
     // Map Zernio messages to the shape the inbox UI expects
     const messages = zernioMessages.map((m: any) => ({
       id: m.id,
       conversation_id: conversationId,
-      direction: m.direction === "outbound" ? "outbound" : "inbound",
+      direction:
+        m.direction === "outbound" || m.direction === "outgoing"
+          ? "outbound"
+          : "inbound",
       text: m.text ?? m.message ?? null,
       attachments: m.attachments?.length ? m.attachments : null,
       quick_reply_payload: null,
@@ -69,7 +73,12 @@ export async function GET(request: NextRequest) {
       sent_by_flow_id: null,
       sent_by_node_id: null,
       sent_by_user_id: null,
-      status: "sent",
+      status:
+        m.deliveryStatus === "failed"
+          ? "failed"
+          : m.deliveryStatus === "delivered" || m.deliveryStatus === "read"
+          ? "delivered"
+          : "sent",
       created_at: m.sentAt ?? m.createdAt ?? new Date().toISOString(),
     }));
 

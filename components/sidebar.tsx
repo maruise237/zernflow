@@ -23,9 +23,6 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
-import type { Database } from "@/lib/types/database";
-
-type Workspace = Database["public"]["Tables"]["workspaces"]["Row"];
 
 interface WorkspaceItem {
   id: string;
@@ -51,7 +48,7 @@ export function Sidebar({
   workspace,
   workspaces,
 }: {
-  workspace: Workspace;
+  workspace: { id: string; name: string };
   user: { id: string; email?: string };
   workspaces: WorkspaceItem[];
 }) {

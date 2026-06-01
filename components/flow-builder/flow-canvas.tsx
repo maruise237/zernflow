@@ -17,7 +17,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
-import { useCallback, useRef, useState, type DragEvent } from "react";
+import { useCallback, useMemo, useRef, useState, type DragEvent } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Save, Rocket, Loader2, History, Play, Trash2, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -102,6 +102,7 @@ function FlowCanvasInner({ flow, channels }: FlowCanvasProps) {
   const [publishing, setPublishing] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [versionPanelOpen, setVersionPanelOpen] = useState(false);
   const [testPanelOpen, setTestPanelOpen] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -112,6 +113,26 @@ function FlowCanvasInner({ flow, channels }: FlowCanvasProps) {
   const selectedNode = selectedNodeId
     ? nodes.find((n) => n.id === selectedNodeId) || null
     : null;
+  const selectedEdge = selectedEdgeId
+    ? edges.find((edge) => edge.id === selectedEdgeId) || null
+    : null;
+  const renderedEdges = useMemo(
+    () =>
+      edges.map((edge) =>
+        edge.id === selectedEdgeId
+          ? {
+              ...edge,
+              animated: true,
+              style: {
+                ...(edge.style || {}),
+                stroke: "var(--destructive)",
+                strokeWidth: 3,
+              },
+            }
+          : edge
+      ),
+    [edges, selectedEdgeId]
+  );
 
   const onConnect = useCallback(
     (connection: Connection) => {
@@ -167,12 +188,19 @@ function FlowCanvasInner({ flow, channels }: FlowCanvasProps) {
   const onNodeClick = useCallback(
     (_event: React.MouseEvent, node: Node) => {
       setSelectedNodeId(node.id);
+      setSelectedEdgeId(null);
     },
     []
   );
 
   const onPaneClick = useCallback(() => {
     setSelectedNodeId(null);
+    setSelectedEdgeId(null);
+  }, []);
+
+  const onEdgeClick = useCallback((_event: React.MouseEvent, edge: Edge) => {
+    setSelectedNodeId(null);
+    setSelectedEdgeId(edge.id);
   }, []);
 
   const onNodeDataChange = useCallback(
@@ -198,6 +226,12 @@ function FlowCanvasInner({ flow, channels }: FlowCanvasProps) {
     },
     [setNodes, setEdges]
   );
+
+  const deleteSelectedEdge = useCallback(() => {
+    if (!selectedEdgeId) return;
+    setEdges((eds) => eds.filter((edge) => edge.id !== selectedEdgeId));
+    setSelectedEdgeId(null);
+  }, [selectedEdgeId, setEdges]);
 
   const saveFlow = useCallback(
     async (status?: FlowStatus) => {
@@ -485,13 +519,14 @@ function FlowCanvasInner({ flow, channels }: FlowCanvasProps) {
         <div ref={reactFlowWrapper} className="min-w-0 flex-1">
           <ReactFlow
             nodes={nodes}
-            edges={edges}
+            edges={renderedEdges}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
             onDrop={onDrop}
             onDragOver={onDragOver}
             onNodeClick={onNodeClick}
+            onEdgeClick={onEdgeClick}
             onPaneClick={onPaneClick}
             nodeTypes={nodeTypes}
             fitView
@@ -509,6 +544,18 @@ function FlowCanvasInner({ flow, channels }: FlowCanvasProps) {
               maskColor="rgba(0, 0, 0, 0.1)"
             />
           </ReactFlow>
+          {selectedEdge && (
+            <div className="pointer-events-none absolute right-4 top-4 z-20">
+              <button
+                type="button"
+                onClick={deleteSelectedEdge}
+                className="pointer-events-auto inline-flex items-center gap-2 rounded-lg border border-destructive/30 bg-card px-3 py-2 text-sm font-medium text-destructive shadow-lg transition-colors hover:bg-destructive hover:text-destructive-foreground"
+              >
+                <Trash2 className="h-4 w-4" />
+                Supprimer le lien
+              </button>
+            </div>
+          )}
         </div>
         {selectedNode && !versionPanelOpen && !testPanelOpen && (
           <NodeConfigSidebar

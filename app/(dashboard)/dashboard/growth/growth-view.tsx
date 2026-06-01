@@ -63,14 +63,13 @@ const platformLabels: Record<Platform, string> = {
 };
 
 export function GrowthView({
-  workspaceId,
   channels,
   triggers: initialTriggers,
   flows,
   stats,
   recentLogs,
+  loadErrors = [],
 }: {
-  workspaceId: string;
   channels: Channel[];
   triggers: TriggerWithFlow[];
   flows: Array<{ id: string; name: string }>;
@@ -80,6 +79,7 @@ export function GrowthView({
     dmsSent: number;
   };
   recentLogs: CommentLog[];
+  loadErrors?: string[];
 }) {
   const [triggers, setTriggers] = useState(initialTriggers);
   const [showCreate, setShowCreate] = useState(false);
@@ -212,7 +212,7 @@ export function GrowthView({
   }
 
   function handleStartEdit(trigger: TriggerWithFlow) {
-    const config = trigger.config as unknown as TriggerConfig;
+    const config = safeTriggerConfig(trigger.config);
     setEditingId(trigger.id);
     setShowCreate(false);
     setForm({
@@ -327,6 +327,28 @@ export function GrowthView({
       </div>
 
       <div className="flex-1 overflow-auto p-8">
+        {loadErrors.length > 0 && (
+          <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <div>
+                <p className="font-semibold">
+                  Certaines donnees Growth n'ont pas pu se charger
+                </p>
+                <p className="mt-1 text-amber-800">
+                  La page reste utilisable, mais il faut verifier les migrations
+                  Supabase ou les logs serveur.
+                </p>
+                <ul className="mt-2 space-y-1 text-xs text-amber-800">
+                  {loadErrors.slice(0, 4).map((error) => (
+                    <li key={error}>{error}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Stats cards */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
@@ -386,7 +408,7 @@ export function GrowthView({
                   {channels.map((ch) => (
                     <option key={ch.id} value={ch.id}>
                       {ch.display_name || ch.username || ch.late_account_id} (
-                      {platformLabels[ch.platform]})
+                      {getPlatformLabel(ch.platform)})
                     </option>
                   ))}
                 </select>
@@ -576,7 +598,7 @@ export function GrowthView({
 
             <div className="mt-4 space-y-3">
               {triggers.map((trigger) => {
-                const config = trigger.config as unknown as TriggerConfig;
+                const config = safeTriggerConfig(trigger.config);
                 const channel = channels.find(
                   (c) => c.id === trigger.channel_id
                 );
@@ -616,7 +638,7 @@ export function GrowthView({
                             <span className="text-xs text-muted-foreground">
                               {channel.display_name ||
                                 channel.username ||
-                                platformLabels[channel.platform]}
+                                getPlatformLabel(channel.platform)}
                             </span>
                           )}
 
@@ -845,6 +867,63 @@ function StatCard({
       </p>
     </div>
   );
+}
+
+function safeTriggerConfig(config: Json): TriggerConfig {
+  if (!config || typeof config !== "object" || Array.isArray(config)) {
+    return { keywords: [] };
+  }
+
+  const record = config as Record<string, unknown>;
+  const keywords = Array.isArray(record.keywords)
+    ? record.keywords.flatMap((keyword) => {
+        if (typeof keyword === "string") {
+          return [{ value: keyword, matchType: "contains" as const }];
+        }
+
+        if (!keyword || typeof keyword !== "object") {
+          return [];
+        }
+
+        const keywordRecord = keyword as Record<string, unknown>;
+        if (typeof keywordRecord.value !== "string") {
+          return [];
+        }
+
+        return [
+          {
+            value: keywordRecord.value,
+            matchType: isMatchType(keywordRecord.matchType)
+              ? keywordRecord.matchType
+              : ("contains" as const),
+          },
+        ];
+      })
+    : [];
+
+  const postIds = Array.isArray(record.postIds)
+    ? record.postIds.filter((postId): postId is string => typeof postId === "string")
+    : undefined;
+
+  return {
+    keywords,
+    ...(postIds?.length ? { postIds } : {}),
+    ...(typeof record.replyText === "string" && record.replyText.trim()
+      ? { replyText: record.replyText }
+      : {}),
+  };
+}
+
+function isMatchType(value: unknown): value is "exact" | "contains" | "startsWith" {
+  return value === "exact" || value === "contains" || value === "startsWith";
+}
+
+function getPlatformLabel(platform: unknown): string {
+  if (typeof platform !== "string") {
+    return "Canal inconnu";
+  }
+
+  return platformLabels[platform as Platform] ?? platform;
 }
 
 function StatusPill({

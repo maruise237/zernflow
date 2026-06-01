@@ -367,7 +367,8 @@ async function handleWebhook(request: NextRequest) {
         supabase,
         channel.id,
         conversation.id,
-        incomingMessage
+        incomingMessage,
+        { workspaceId: channel.workspace_id }
       );
       if (trigger) {
         await recordAutomationEvent(supabase, {

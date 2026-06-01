@@ -9,6 +9,7 @@ type LiveTestBody = {
   channelId?: string;
   conversationId?: string;
   text?: string;
+  flowId?: string;
 };
 
 type TriggerDiagnostic = {
@@ -47,26 +48,35 @@ async function getTriggerDiagnostics({
   supabase,
   workspaceId,
   channelId,
+  flowId,
 }: {
   supabase: ReturnType<typeof createServiceClient> extends Promise<infer T> ? T : never;
   workspaceId: string;
   channelId: string;
+  flowId?: string;
 }) {
+  let candidateQuery = supabase
+    .from("triggers")
+    .select("id, flow_id, channel_id, type, priority, config, flows!inner(name, status, workspace_id)")
+    .or(`channel_id.eq.${channelId},channel_id.is.null`)
+    .eq("is_active", true)
+    .eq("flows.status", "published")
+    .eq("flows.workspace_id", workspaceId);
+
+  let workspaceQuery = supabase
+    .from("triggers")
+    .select("id, flow_id, channel_id, type, priority, config, flows!inner(name, status, workspace_id)")
+    .eq("is_active", true)
+    .eq("flows.workspace_id", workspaceId);
+
+  if (flowId) {
+    candidateQuery = candidateQuery.eq("flow_id", flowId);
+    workspaceQuery = workspaceQuery.eq("flow_id", flowId);
+  }
+
   const [{ data: candidateTriggers }, { data: workspaceTriggers }] = await Promise.all([
-    supabase
-      .from("triggers")
-      .select("id, flow_id, channel_id, type, priority, config, flows!inner(name, status)")
-      .or(`channel_id.eq.${channelId},channel_id.is.null`)
-      .eq("is_active", true)
-      .eq("flows.status", "published")
-      .order("priority", { ascending: false }),
-    supabase
-      .from("triggers")
-      .select("id, flow_id, channel_id, type, priority, config, flows!inner(name, status, workspace_id)")
-      .eq("is_active", true)
-      .eq("flows.workspace_id", workspaceId)
-      .order("created_at", { ascending: false })
-      .limit(40),
+    candidateQuery.order("priority", { ascending: false }),
+    workspaceQuery.order("created_at", { ascending: false }).limit(40),
   ]);
 
   const candidates = (candidateTriggers ?? []).map(summarizeTrigger);
@@ -117,6 +127,7 @@ export async function POST(request: NextRequest) {
 
   const body = (await request.json()) as LiveTestBody;
   const text = body.text?.trim() || "test";
+  const flowId = body.flowId?.trim() || undefined;
 
   if (!body.channelId || !body.conversationId) {
     return NextResponse.json(
@@ -160,6 +171,7 @@ export async function POST(request: NextRequest) {
     metadata: {
       channelId: channel.id,
       conversationId: conversation.id,
+      flowId: flowId ?? null,
       text,
       userId: user.id,
     },
@@ -182,7 +194,7 @@ export async function POST(request: NextRequest) {
     event_type: "webhook_received",
     status: "info",
     message: "Live test injected an inbound DM into a real conversation",
-    metadata: { text },
+    metadata: { text, flowId: flowId ?? null },
   });
 
   if (conversation.is_automation_paused) {
@@ -217,12 +229,14 @@ export async function POST(request: NextRequest) {
     serviceSupabase,
     channel.id,
     conversation.id,
-    incomingMessage
+    incomingMessage,
+    { flowId, workspaceId: membership.workspace_id }
   );
   const triggerDiagnostics = await getTriggerDiagnostics({
     supabase: serviceSupabase,
     workspaceId: membership.workspace_id,
     channelId: channel.id,
+    flowId,
   });
 
   if (!trigger) {
@@ -235,7 +249,7 @@ export async function POST(request: NextRequest) {
       event_type: "trigger_not_matched",
       status: "skipped",
       message: "Live DM test did not match any published trigger",
-      metadata: { text, triggerDiagnostics },
+      metadata: { text, flowId: flowId ?? null, triggerDiagnostics },
     });
 
     await recordAppLog(serviceSupabase, {
@@ -243,7 +257,7 @@ export async function POST(request: NextRequest) {
       level: "info",
       source: "live_test",
       message: "Live DM test did not match a trigger",
-      metadata: { text, triggerDiagnostics },
+      metadata: { text, flowId: flowId ?? null, triggerDiagnostics },
     });
 
     return NextResponse.json({ ok: true, matched: false, diagnostics: triggerDiagnostics });
@@ -260,7 +274,7 @@ export async function POST(request: NextRequest) {
     event_type: "trigger_matched",
     status: "success",
     message: "Live DM test matched a published trigger",
-      metadata: { triggerType: trigger.type, text, triggerDiagnostics },
+      metadata: { triggerType: trigger.type, text, flowId: flowId ?? null, triggerDiagnostics },
   });
 
   try {

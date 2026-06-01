@@ -14,16 +14,26 @@ export async function matchTrigger(
   supabase: SupabaseClient<Database>,
   channelId: string,
   conversationId: string,
-  message: IncomingMessage
+  message: IncomingMessage,
+  options?: { flowId?: string; workspaceId?: string }
 ): Promise<Trigger | null> {
   // Get all active triggers for this channel (or global triggers with null channel_id)
-  const { data: triggers } = await supabase
+  let query = supabase
     .from("triggers")
-    .select("*, flows!inner(status)")
+    .select("*, flows!inner(status, workspace_id)")
     .or(`channel_id.eq.${channelId},channel_id.is.null`)
     .eq("is_active", true)
-    .eq("flows.status", "published")
-    .order("priority", { ascending: false });
+    .eq("flows.status", "published");
+
+  if (options?.flowId) {
+    query = query.eq("flow_id", options.flowId);
+  }
+
+  if (options?.workspaceId) {
+    query = query.eq("flows.workspace_id", options.workspaceId);
+  }
+
+  const { data: triggers } = await query.order("priority", { ascending: false });
 
   if (!triggers || triggers.length === 0) return null;
 

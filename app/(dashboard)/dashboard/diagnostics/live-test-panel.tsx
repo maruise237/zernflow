@@ -18,19 +18,33 @@ export interface LiveTestConversation {
   contact_name: string | null;
 }
 
+export interface LiveTestFlow {
+  id: string;
+  name: string;
+}
+
 export function LiveTestPanel({
   channels,
   conversations,
+  flows,
 }: {
   channels: LiveTestChannel[];
   conversations: LiveTestConversation[];
+  flows: LiveTestFlow[];
 }) {
+  const [flowId, setFlowId] = useState("");
   const [channelId, setChannelId] = useState(channels[0]?.id || "");
   const [conversationId, setConversationId] = useState("");
   const [text, setText] = useState("test");
+  const [commentText, setCommentText] = useState("prompt");
+  const [postId, setPostId] = useState("");
+  const [commentId, setCommentId] = useState("");
   const [running, setRunning] = useState(false);
+  const [runningComment, setRunningComment] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  const [commentResult, setCommentResult] = useState<string | null>(null);
   const [diagnostics, setDiagnostics] = useState<Record<string, unknown> | null>(null);
+  const [commentDiagnostics, setCommentDiagnostics] = useState<Record<string, unknown> | null>(null);
 
   const availableConversations = useMemo(
     () => conversations.filter((conversation) => conversation.channel_id === channelId),
@@ -46,7 +60,7 @@ export function LiveTestPanel({
       const res = await fetch("/api/v1/diagnostics/live-test", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ channelId, conversationId, text }),
+        body: JSON.stringify({ channelId, conversationId, text, flowId: flowId || undefined }),
       });
       const data = await res.json();
 
@@ -71,6 +85,39 @@ export function LiveTestPanel({
     }
   }
 
+  async function runCommentTest() {
+    setRunningComment(true);
+    setCommentResult(null);
+    setCommentDiagnostics(null);
+
+    try {
+      const res = await fetch("/api/v1/diagnostics/comment-test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channelId, text: commentText, postId, commentId, flowId: flowId || undefined }),
+      });
+      const data = await res.json();
+
+      setCommentDiagnostics(data.diagnostics || null);
+      if (!res.ok || data.error) {
+        setCommentResult(data.error || "Test commentaire échoué");
+        return;
+      }
+
+      if (!data.matched) {
+        setCommentResult("Aucun trigger commentaire publié ne correspond.");
+      } else if (!data.executed) {
+        setCommentResult("Trigger commentaire trouvé. Ajoutez un vrai post_id + comment_id pour exécuter le private reply.");
+      } else {
+        setCommentResult(`Trigger trouvé. Flow exécuté: ${data.flowId}`);
+      }
+    } catch {
+      setCommentResult("Impossible de lancer le test commentaire.");
+    } finally {
+      setRunningComment(false);
+    }
+  }
+
   return (
     <section className="rounded-xl border border-border bg-card p-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -90,7 +137,23 @@ export function LiveTestPanel({
         </button>
       </div>
 
-      <div className="mt-4 grid gap-3 lg:grid-cols-3">
+      <div className="mt-4 grid gap-3 lg:grid-cols-4">
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-muted-foreground">Flow attendu</span>
+          <select
+            value={flowId}
+            onChange={(event) => setFlowId(event.target.value)}
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+          >
+            <option value="">Tous les flows publies</option>
+            {flows.map((flow) => (
+              <option key={flow.id} value={flow.id}>
+                {flow.name}
+              </option>
+            ))}
+          </select>
+        </label>
+
         <label className="block">
           <span className="mb-1 block text-xs font-medium text-muted-foreground">Canal</span>
           <select
@@ -165,6 +228,67 @@ export function LiveTestPanel({
           Aucune conversation synchronisée pour ce canal. Va dans Canaux, clique Synchroniser, puis reviens ici.
         </p>
       )}
+
+      <div className="mt-6 border-t border-border pt-5">
+        <h3 className="text-sm font-semibold">Test live Commentaire</h3>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Teste les triggers comment_keyword. Avec un vrai post_id + comment_id, le flow peut exécuter un Private Reply réel.
+        </p>
+
+        <div className="mt-4 grid gap-3 lg:grid-cols-3">
+          <label className="block">
+            <span className="mb-1 block text-xs font-medium text-muted-foreground">Texte du commentaire</span>
+            <input
+              value={commentText}
+              onChange={(event) => setCommentText(event.target.value)}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              placeholder="ex: prompt"
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-medium text-muted-foreground">post_id réel (optionnel)</span>
+            <input
+              value={postId}
+              onChange={(event) => setPostId(event.target.value)}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              placeholder="post id"
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-medium text-muted-foreground">comment_id réel (optionnel)</span>
+            <input
+              value={commentId}
+              onChange={(event) => setCommentId(event.target.value)}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              placeholder="comment id"
+            />
+          </label>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={runCommentTest}
+            disabled={runningComment || !channelId || !commentText.trim()}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
+          >
+            {runningComment ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+            Lancer le test commentaire
+          </button>
+          {commentResult && <p className="text-sm text-muted-foreground">{commentResult}</p>}
+        </div>
+
+        {commentDiagnostics && (
+          <details className="mt-4 rounded-lg border border-border bg-muted/40 p-3">
+            <summary className="cursor-pointer text-xs font-medium text-muted-foreground">
+              Voir diagnostics triggers commentaire
+            </summary>
+            <pre className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap break-words text-[11px] text-muted-foreground">
+              {JSON.stringify(commentDiagnostics, null, 2)}
+            </pre>
+          </details>
+        )}
+      </div>
     </section>
   );
 }

@@ -9,7 +9,7 @@ import {
   MessageSquareWarning,
   RadioTower,
 } from "lucide-react";
-import { LiveTestPanel, type LiveTestChannel, type LiveTestConversation } from "./live-test-panel";
+import { LiveTestPanel, type LiveTestChannel, type LiveTestConversation, type LiveTestFlow } from "./live-test-panel";
 
 type AutomationEvent = Database["public"]["Tables"]["automation_events"]["Row"];
 type AppLog = Database["public"]["Tables"]["app_logs"]["Row"];
@@ -79,6 +79,7 @@ export default async function DiagnosticsPage() {
     { data: appLogs },
     { data: channels },
     { data: conversations },
+    { data: flows },
   ] =
     await Promise.all([
       supabase
@@ -118,12 +119,19 @@ export default async function DiagnosticsPage() {
         .not("late_conversation_id", "is", null)
         .order("last_message_at", { ascending: false })
         .limit(100),
+      supabase
+        .from("flows")
+        .select("id, name")
+        .eq("workspace_id", workspace.id)
+        .eq("status", "published")
+        .order("name", { ascending: true }),
     ]);
 
   const recentEvents = events ?? [];
   const matchedCount = recentEvents.filter((event) => event.event_type === "trigger_matched").length;
   const skippedCount = countByStatus(recentEvents, "skipped");
   const liveTestChannels = (channels ?? []) as LiveTestChannel[];
+  const liveTestFlows = (flows ?? []) as LiveTestFlow[];
   const liveTestConversations = ((conversations ?? []) as Array<LiveTestConversation & { contacts?: { display_name?: string | null } | null }>).map(
     (conversation) => ({
       id: conversation.id,
@@ -149,6 +157,7 @@ export default async function DiagnosticsPage() {
         <LiveTestPanel
           channels={liveTestChannels}
           conversations={liveTestConversations}
+          flows={liveTestFlows}
         />
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

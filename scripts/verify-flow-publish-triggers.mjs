@@ -28,6 +28,7 @@ assertContains(publishRoute, "activationScope", "publish route");
 assertContains(publishRoute, "activeChannels", "publish route");
 assertContains(publishRoute, "platforms", "publish route");
 assertContains(publishRoute, "channelIds", "publish route");
+assertContains(publishRoute, "invalid_trigger_scope", "publish route");
 assertContains(triggerPanel, "Canaux: tous les canaux actifs", "trigger panel activation copy");
 assertContains(triggerPanel, "Plateformes choisies", "trigger panel platform scope");
 assertContains(triggerPanel, "Comptes précis", "trigger panel channel scope");

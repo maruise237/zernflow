@@ -11,6 +11,87 @@ type LiveTestBody = {
   text?: string;
 };
 
+type TriggerDiagnostic = {
+  id: string;
+  flowId: string;
+  flowName?: string;
+  flowStatus?: string;
+  channelId: string | null;
+  type: string;
+  priority: number;
+  config: unknown;
+};
+
+function summarizeTrigger(trigger: {
+  id: string;
+  flow_id: string;
+  channel_id: string | null;
+  type: string;
+  priority: number;
+  config: unknown;
+  flows?: { name?: string | null; status?: string | null } | null;
+}): TriggerDiagnostic {
+  return {
+    id: trigger.id,
+    flowId: trigger.flow_id,
+    flowName: trigger.flows?.name || undefined,
+    flowStatus: trigger.flows?.status || undefined,
+    channelId: trigger.channel_id,
+    type: trigger.type,
+    priority: trigger.priority,
+    config: trigger.config,
+  };
+}
+
+async function getTriggerDiagnostics({
+  supabase,
+  workspaceId,
+  channelId,
+}: {
+  supabase: ReturnType<typeof createServiceClient> extends Promise<infer T> ? T : never;
+  workspaceId: string;
+  channelId: string;
+}) {
+  const [{ data: candidateTriggers }, { data: workspaceTriggers }] = await Promise.all([
+    supabase
+      .from("triggers")
+      .select("id, flow_id, channel_id, type, priority, config, flows!inner(name, status)")
+      .or(`channel_id.eq.${channelId},channel_id.is.null`)
+      .eq("is_active", true)
+      .eq("flows.status", "published")
+      .order("priority", { ascending: false }),
+    supabase
+      .from("triggers")
+      .select("id, flow_id, channel_id, type, priority, config, flows!inner(name, status, workspace_id)")
+      .eq("is_active", true)
+      .eq("flows.workspace_id", workspaceId)
+      .order("created_at", { ascending: false })
+      .limit(40),
+  ]);
+
+  const candidates = (candidateTriggers ?? []).map(summarizeTrigger);
+  const allWorkspaceTriggers = (workspaceTriggers ?? []).map(summarizeTrigger);
+
+  let reason = "unknown";
+  if (candidates.length === 0) {
+    reason = allWorkspaceTriggers.length === 0
+      ? "no_published_triggers_in_workspace"
+      : "no_active_published_triggers_for_channel";
+  } else if (candidates.every((trigger) => trigger.type === "comment_keyword")) {
+    reason = "only_comment_triggers_found_for_dm_test";
+  } else {
+    reason = "candidate_triggers_found_but_no_rule_matched_text";
+  }
+
+  return {
+    reason,
+    candidateCount: candidates.length,
+    candidates,
+    workspaceTriggerCount: allWorkspaceTriggers.length,
+    workspaceTriggers: allWorkspaceTriggers,
+  };
+}
+
 export async function POST(request: NextRequest) {
   const authSupabase = await createClient();
   const serviceSupabase = await createServiceClient();
@@ -138,6 +219,11 @@ export async function POST(request: NextRequest) {
     conversation.id,
     incomingMessage
   );
+  const triggerDiagnostics = await getTriggerDiagnostics({
+    supabase: serviceSupabase,
+    workspaceId: membership.workspace_id,
+    channelId: channel.id,
+  });
 
   if (!trigger) {
     await recordAutomationEvent(serviceSupabase, {
@@ -149,10 +235,18 @@ export async function POST(request: NextRequest) {
       event_type: "trigger_not_matched",
       status: "skipped",
       message: "Live DM test did not match any published trigger",
-      metadata: { text },
+      metadata: { text, triggerDiagnostics },
     });
 
-    return NextResponse.json({ ok: true, matched: false });
+    await recordAppLog(serviceSupabase, {
+      workspace_id: membership.workspace_id,
+      level: "info",
+      source: "live_test",
+      message: "Live DM test did not match a trigger",
+      metadata: { text, triggerDiagnostics },
+    });
+
+    return NextResponse.json({ ok: true, matched: false, diagnostics: triggerDiagnostics });
   }
 
   await recordAutomationEvent(serviceSupabase, {
@@ -166,7 +260,7 @@ export async function POST(request: NextRequest) {
     event_type: "trigger_matched",
     status: "success",
     message: "Live DM test matched a published trigger",
-    metadata: { triggerType: trigger.type, text },
+      metadata: { triggerType: trigger.type, text, triggerDiagnostics },
   });
 
   try {
@@ -195,6 +289,7 @@ export async function POST(request: NextRequest) {
       matched: true,
       flowId: trigger.flow_id,
       triggerId: trigger.id,
+      diagnostics: triggerDiagnostics,
     });
   } catch (error) {
     await recordAppLog(serviceSupabase, {

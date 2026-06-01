@@ -27,8 +27,12 @@ assertContains(liveRoute, "matchTrigger", "live test route");
 assertContains(liveRoute, "executeFlow", "live test route");
 assertContains(liveRoute, "late_conversation_id", "live test route");
 assertContains(liveRoute, "Live DM test matched", "live test route");
+assertContains(liveRoute, "triggerDiagnostics", "live test route");
+assertContains(liveRoute, "workspaceTriggers", "live test route");
+assertContains(liveRoute, "no_active_published_triggers_for_channel", "live test route");
 assertContains(livePanel, "Test live DM", "live test panel");
 assertContains(livePanel, "/api/v1/diagnostics/live-test", "live test panel");
+assertContains(livePanel, "diagnostics", "live test panel");
 assertContains(diagnosticsPage, "App logs temporaires", "diagnostics page");
 assertContains(diagnosticsPage, "LiveTestPanel", "diagnostics page");
 

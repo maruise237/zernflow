@@ -30,6 +30,7 @@ export function LiveTestPanel({
   const [text, setText] = useState("test");
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  const [diagnostics, setDiagnostics] = useState<Record<string, unknown> | null>(null);
 
   const availableConversations = useMemo(
     () => conversations.filter((conversation) => conversation.channel_id === channelId),
@@ -39,6 +40,7 @@ export function LiveTestPanel({
   async function runLiveTest() {
     setRunning(true);
     setResult(null);
+    setDiagnostics(null);
 
     try {
       const res = await fetch("/api/v1/diagnostics/live-test", {
@@ -50,9 +52,11 @@ export function LiveTestPanel({
 
       if (!res.ok || data.error) {
         setResult(data.error || "Test live échoué");
+        setDiagnostics(data.diagnostics || null);
         return;
       }
 
+      setDiagnostics(data.diagnostics || null);
       if (data.matched) {
         setResult(`Trigger trouvé. Flow exécuté: ${data.flowId}`);
       } else {
@@ -144,6 +148,17 @@ export function LiveTestPanel({
         </button>
         {result && <p className="text-sm text-muted-foreground">{result}</p>}
       </div>
+
+      {diagnostics && (
+        <details className="mt-4 rounded-lg border border-border bg-muted/40 p-3">
+          <summary className="cursor-pointer text-xs font-medium text-muted-foreground">
+            Voir diagnostics triggers
+          </summary>
+          <pre className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap break-words text-[11px] text-muted-foreground">
+            {JSON.stringify(diagnostics, null, 2)}
+          </pre>
+        </details>
+      )}
 
       {availableConversations.length === 0 && (
         <p className="mt-3 text-xs text-amber-600">

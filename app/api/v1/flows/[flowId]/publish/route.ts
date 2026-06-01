@@ -113,6 +113,13 @@ function buildTriggerInserts({
   activeChannels: ActiveChannel[];
 }): Database["public"]["Tables"]["triggers"]["Insert"][] {
   const scope = node.data?.activationScope || "all";
+  if (scope === "platforms" && (node.data?.platforms || []).length === 0) {
+    throw new Error("invalid_trigger_scope: sélectionnez au moins une plateforme pour ce déclencheur.");
+  }
+  if (scope === "channels" && (node.data?.channelIds || []).length === 0) {
+    throw new Error("invalid_trigger_scope: sélectionnez au moins un compte pour ce déclencheur.");
+  }
+
   const baseInsert = {
     flow_id: flowId,
     type: node.data?.triggerType || "keyword",
@@ -188,12 +195,20 @@ export async function POST(
     })
     .eq("id", flowId);
 
-  const triggerCount = await syncFlowTriggers({
-    supabase,
-    flowId,
-    workspaceId: membership.workspace_id,
-    nodes: flow.nodes,
-  });
+  let triggerCount = 0;
+  try {
+    triggerCount = await syncFlowTriggers({
+      supabase,
+      flowId,
+      workspaceId: membership.workspace_id,
+      nodes: flow.nodes,
+    });
+  } catch (syncError) {
+    return NextResponse.json(
+      { error: syncError instanceof Error ? syncError.message : "Impossible de publier les déclencheurs" },
+      { status: 400 }
+    );
+  }
 
   // Save version snapshot
   await supabase.from("flow_versions").insert({

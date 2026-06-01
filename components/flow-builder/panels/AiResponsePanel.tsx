@@ -30,6 +30,10 @@ export function AiResponsePanel({ data: rawData, onChange }: AiResponsePanelProp
   return (
     <div className="space-y-4">
       {/* System Prompt */}
+      <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-800 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-300">
+        Le dernier DM entrant est toujours traite comme la demande principale. L'historique sert seulement de contexte pour eviter que l'IA reponde a une ancienne question.
+      </div>
+
       <div>
         <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
           Prompt système
@@ -130,7 +134,7 @@ export function AiResponsePanel({ data: rawData, onChange }: AiResponsePanelProp
       {/* Context Messages */}
       <div>
         <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-          Messages de contexte
+          Historique secondaire
         </label>
         <input
           type="number"
@@ -141,7 +145,7 @@ export function AiResponsePanel({ data: rawData, onChange }: AiResponsePanelProp
           className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
         <p className="mt-1 text-[11px] text-muted-foreground/60">
-          Nombre de messages précédents à inclure comme contexte pour l'IA.
+          Nombre de messages precedents a inclure comme contexte secondaire. Le dernier DM reste prioritaire.
         </p>
       </div>
     </div>

@@ -21,6 +21,8 @@ const engine = read("lib/flow-engine/engine.ts");
 const aiResponse = read("lib/flow-engine/nodes/ai-response.ts");
 const diagnosticsPage = read("app/(dashboard)/dashboard/diagnostics/page.tsx");
 const growthView = read("app/(dashboard)/dashboard/growth/growth-view.tsx");
+const growthError = read("app/(dashboard)/dashboard/growth/error.tsx");
+const buildInfoRoute = read("app/api/v1/build-info/route.ts");
 const channelsView = read("app/(dashboard)/dashboard/channels/channels-view.tsx");
 const sidebar = read("components/sidebar.tsx");
 
@@ -46,6 +48,8 @@ assertContains(growthView, "commentaire a plus de 7 jours", "growth comment diag
 assertContains(growthView, "safeTriggerConfig", "growth page resilience");
 assertContains(growthView, "getPlatformLabel", "growth page resilience");
 assertContains(growthView, "Certaines donnees Growth", "growth page resilience");
+assertContains(growthError, "La page Growth n'a pas pu charger", "growth error boundary");
+assertContains(buildInfoRoute, "growth-error-boundary-2026-06-01", "build info marker");
 assertContains(channelsView, "Webhook Zernio", "channels webhook status");
 assertContains(channelsView, "message.received", "channels webhook status");
 assertContains(channelsView, "comment.received", "channels webhook status");

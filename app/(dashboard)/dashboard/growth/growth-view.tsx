@@ -13,6 +13,8 @@ import {
   TrendingUp,
   Send,
   Eye,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -732,7 +734,13 @@ export function GrowthView({
                       Correspondance
                     </th>
                     <th className="px-4 py-3 text-xs font-medium text-muted-foreground">
-                      DM
+                      Réponse publique
+                    </th>
+                    <th className="px-4 py-3 text-xs font-medium text-muted-foreground">
+                      DM privé
+                    </th>
+                    <th className="px-4 py-3 text-xs font-medium text-muted-foreground">
+                      Diagnostic
                     </th>
                     <th className="px-4 py-3 text-xs font-medium text-muted-foreground">
                       Heure
@@ -770,21 +778,31 @@ export function GrowthView({
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        {log.dm_sent ? (
-                          <span className="inline-flex rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700">
-                            Envoyé
-                          </span>
-                        ) : log.error ? (
-                          <span
-                            className="inline-flex rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-medium text-red-700"
-                            title={log.error}
-                          >
-                            Erreur
-                          </span>
+                        <StatusPill ok={log.reply_sent} labelOk="Envoyee" labelKo="Non" />
+                      </td>
+                      <td className="px-4 py-3">
+                        <StatusPill
+                          ok={log.dm_sent}
+                          labelOk="Envoye"
+                          labelKo={log.error ? "Erreur" : "Non"}
+                          error={Boolean(log.error)}
+                        />
+                      </td>
+                      <td className="max-w-sm px-4 py-3">
+                        {log.error ? (
+                          <div className="flex items-start gap-2 rounded-lg bg-red-50 px-2.5 py-2 text-xs text-red-700">
+                            <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span className="line-clamp-3 break-words" title={log.error}>
+                              {friendlyCommentError(log.error)}
+                            </span>
+                          </div>
+                        ) : log.dm_sent || log.reply_sent ? (
+                          <div className="flex items-center gap-1.5 text-xs text-emerald-700">
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            OK
+                          </div>
                         ) : (
-                          <span className="text-xs text-muted-foreground/60">
-                            --
-                          </span>
+                          <span className="text-xs text-muted-foreground/60">--</span>
                         )}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-xs text-muted-foreground/60">
@@ -827,6 +845,56 @@ function StatCard({
       </p>
     </div>
   );
+}
+
+function StatusPill({
+  ok,
+  labelOk,
+  labelKo,
+  error,
+}: {
+  ok: boolean;
+  labelOk: string;
+  labelKo: string;
+  error?: boolean;
+}) {
+  if (ok) {
+    return (
+      <span className="inline-flex rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700">
+        {labelOk}
+      </span>
+    );
+  }
+
+  return (
+    <span
+      className={cn(
+        "inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium",
+        error
+          ? "bg-red-100 text-red-700"
+          : "bg-muted text-muted-foreground"
+      )}
+    >
+      {labelKo}
+    </span>
+  );
+}
+
+function friendlyCommentError(error: string) {
+  const lower = error.toLowerCase();
+  if (lower.includes("older than 7 days")) {
+    return "DM impossible: le commentaire a plus de 7 jours. Meta autorise le private reply seulement pendant 7 jours.";
+  }
+  if (lower.includes("already") && lower.includes("private reply")) {
+    return "DM impossible: Meta autorise un seul private reply par commentaire.";
+  }
+  if (lower.includes("no outbound dm")) {
+    return "Aucun DM envoye par le flow. Verifiez le noeud privateReply et les diagnostics.";
+  }
+  if (lower.includes("message") && lower.includes("required")) {
+    return "DM impossible: le message du noeud est vide.";
+  }
+  return error;
 }
 
 function formatRelativeTime(dateStr: string): string {

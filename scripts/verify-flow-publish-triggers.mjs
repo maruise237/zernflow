@@ -46,6 +46,8 @@ assertContains(triggerPanel, "Plateformes choisies", "trigger panel platform sco
 assertContains(triggerPanel, "Comptes précis", "trigger panel channel scope");
 assertContains(triggerNode, "Chatbot IA", "trigger node ai chatbot label");
 assertContains(templatesView, "Regardez vos DM", "gated resource template comment reply");
+assertContains(templatesView, "deliver-resource", "gated resource direct private reply");
+assertContains(templatesView, "actionType: \"privateReply\"", "gated resource direct private reply");
 assertContains(flowCanvas, "publishMessage", "flow canvas publish feedback");
 assertContains(flowCanvas, "activation", "flow canvas publish feedback");
 assertContains(zernioWebhook, "message.received", "zernio webhook helper");

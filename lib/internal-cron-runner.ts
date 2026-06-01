@@ -23,6 +23,12 @@ const TASKS: CronTask[] = [
     intervalMs: 60_000,
     initialDelayMs: 30_000,
   },
+  {
+    name: "webhooks",
+    path: "/api/cron/webhooks",
+    intervalMs: 10 * 60_000,
+    initialDelayMs: 45_000,
+  },
 ];
 
 export function startInternalCronRunner() {

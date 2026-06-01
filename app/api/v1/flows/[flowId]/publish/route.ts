@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { recordAppLog } from "@/lib/app-logs";
+import { createZernioClient } from "@/lib/zernio-client";
+import { ensureZernflowWebhook } from "@/lib/zernio-webhook";
 import type { Database, Json, Platform, TriggerType } from "@/lib/types/database";
 
 type FlowNode = {
@@ -153,6 +156,7 @@ export async function POST(
 ) {
   const { flowId } = await params;
   const supabase = await createClient();
+  const serviceSupabase = await createServiceClient();
 
   const {
     data: { user },
@@ -210,6 +214,41 @@ export async function POST(
     );
   }
 
+  const { data: workspace } = await supabase
+    .from("workspaces")
+    .select("late_api_key_encrypted")
+    .eq("id", membership.workspace_id)
+    .single();
+
+  let webhook:
+    | Awaited<ReturnType<typeof ensureZernflowWebhook>>
+    | { skipped: true; reason: string };
+
+  if (!workspace?.late_api_key_encrypted) {
+    webhook = { skipped: true, reason: "Zernio API key is not configured" };
+  } else {
+    try {
+      webhook = await ensureZernflowWebhook(
+        createZernioClient(workspace.late_api_key_encrypted)
+      );
+    } catch (webhookError) {
+      webhook = {
+        skipped: true,
+        reason: webhookError instanceof Error ? webhookError.message : String(webhookError),
+      };
+    }
+  }
+
+  await recordAppLog(serviceSupabase, {
+    workspace_id: membership.workspace_id,
+    level: webhook.skipped ? "warn" : "info",
+    source: "flow_publish",
+    message: webhook.skipped
+      ? "Flow published but Zernio webhook was not confirmed"
+      : "Flow published and Zernio webhook confirmed",
+    metadata: { flowId, triggerCount, webhook },
+  });
+
   // Save version snapshot
   await supabase.from("flow_versions").insert({
     flow_id: flowId,
@@ -221,5 +260,5 @@ export async function POST(
     published_by: user.id,
   });
 
-  return NextResponse.json({ ...flow, version: newVersion, triggerCount });
+  return NextResponse.json({ ...flow, version: newVersion, triggerCount, webhook });
 }

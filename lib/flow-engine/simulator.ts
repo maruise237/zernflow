@@ -61,6 +61,57 @@ export interface SimulationResult {
 
 // --- Helpers ---
 
+type KeywordConfig = {
+  value: string;
+  matchType: "exact" | "contains" | "startsWith";
+};
+
+function normalizeKeywords(value: unknown): KeywordConfig[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((keyword) => {
+      if (typeof keyword === "string") {
+        return { value: keyword, matchType: "contains" as const };
+      }
+
+      if (
+        keyword &&
+        typeof keyword === "object" &&
+        "value" in keyword &&
+        typeof keyword.value === "string"
+      ) {
+        const keywordRecord = keyword as {
+          value: string;
+          matchType?: unknown;
+        };
+        const matchType =
+          keywordRecord.matchType === "exact" ||
+          keywordRecord.matchType === "startsWith" ||
+          keywordRecord.matchType === "contains"
+            ? keywordRecord.matchType
+            : "contains";
+
+        return { value: keywordRecord.value, matchType };
+      }
+
+      return null;
+    })
+    .filter((keyword): keyword is KeywordConfig => Boolean(keyword?.value));
+}
+
+function keywordMatches(
+  message: string,
+  { value, matchType }: KeywordConfig
+): boolean {
+  const keyword = value.toLowerCase().trim();
+  if (!keyword) return false;
+
+  if (matchType === "exact") return message === keyword;
+  if (matchType === "startsWith") return message.startsWith(keyword);
+  return message.includes(keyword);
+}
+
 function interpolate(
   text: string,
   variables: Record<string, string>
@@ -116,17 +167,18 @@ export function simulateFlow(
   // Simulate trigger matching
   const triggerData = triggerNode.data as Record<string, unknown>;
   const triggerType = (triggerData.triggerType as string) || "keyword";
-  const keywords = (triggerData.keywords as string[]) || [];
+  const keywords = normalizeKeywords(
+    triggerData.keywords ||
+      (triggerData.config as Record<string, unknown> | undefined)?.keywords
+  );
+  const keywordLabels = keywords.map((keyword) => keyword.value);
   let triggerMatched = false;
 
-  if (triggerType === "keyword") {
-    const msg = config.incomingMessage.toLowerCase();
+  if (triggerType === "keyword" || triggerType === "comment_keyword") {
+    const msg = config.incomingMessage.toLowerCase().trim();
     triggerMatched =
       keywords.length === 0 ||
-      keywords.some((k) => {
-        const kw = typeof k === "string" ? k : (k as { value: string }).value;
-        return msg.includes(kw.toLowerCase());
-      });
+      keywords.some((keyword) => keywordMatches(msg, keyword));
   } else if (triggerType === "welcome" || triggerType === "default") {
     triggerMatched = true;
   }
@@ -139,13 +191,13 @@ export function simulateFlow(
       type: "trigger",
       matched: triggerMatched,
       triggerType,
-      keywords: keywords.length > 0 ? keywords : undefined,
+      keywords: keywordLabels.length > 0 ? keywordLabels : undefined,
     },
   });
 
   if (!triggerMatched) {
     errors.push(
-      `Trigger did not match. Keywords: [${keywords.join(", ")}], Message: "${config.incomingMessage}"`
+      `Trigger did not match. Keywords: [${keywordLabels.join(", ")}], Message: "${config.incomingMessage}"`
     );
     return { steps, errors, completed: false };
   }

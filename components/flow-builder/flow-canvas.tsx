@@ -97,6 +97,7 @@ function FlowCanvasInner({ flow }: FlowCanvasProps) {
   const [versionPanelOpen, setVersionPanelOpen] = useState(false);
   const [testPanelOpen, setTestPanelOpen] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [publishMessage, setPublishMessage] = useState<string | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -274,13 +275,21 @@ function FlowCanvasInner({ flow }: FlowCanvasProps) {
       const res = await fetch(`/api/v1/flows/${flow.id}/publish`, {
         method: "POST",
       });
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         console.error("Failed to publish flow");
-        setSaveError("Impossible de publier");
+        setSaveError(data.error || "Impossible de publier");
         setTimeout(() => setSaveError(null), 3000);
         return;
       }
       setSaveError(null);
+      const triggerCount = Number(data.triggerCount ?? 0);
+      setPublishMessage(
+        triggerCount > 0
+          ? `Publié: ${triggerCount} déclencheur${triggerCount === 1 ? "" : "s"} actif${triggerCount === 1 ? "" : "s"} sur tous les canaux actifs.`
+          : "Publié, mais aucun déclencheur n'est configuré."
+      );
+      setTimeout(() => setPublishMessage(null), 6000);
       setLastSaved(new Date());
       router.refresh();
     } finally {
@@ -389,7 +398,12 @@ function FlowCanvasInner({ flow }: FlowCanvasProps) {
               {saveError}
             </span>
           )}
-          {!saveError && lastSaved && (
+          {!saveError && publishMessage && (
+            <span className="text-xs font-medium text-emerald-600">
+              {publishMessage}
+            </span>
+          )}
+          {!saveError && !publishMessage && lastSaved && (
             <span className="text-xs text-muted-foreground">
               Enregistré à {lastSaved.toLocaleTimeString("fr-FR")}
             </span>

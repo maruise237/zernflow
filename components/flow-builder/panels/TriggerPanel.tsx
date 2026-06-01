@@ -85,6 +85,9 @@ export function TriggerPanel({ data: rawData, onChange }: TriggerPanelProps) {
         <label className="mb-2 block text-xs font-semibold text-foreground">
           Type de déclencheur
         </label>
+        <div className="mb-3 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-800 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-300">
+          Canaux: tous les canaux actifs. Après publication, ce déclencheur est actif sur chaque plateforme connectée qui supporte ce type d'événement.
+        </div>
         <div className="space-y-1.5">
           {triggerTypes.map((t) => (
             <label

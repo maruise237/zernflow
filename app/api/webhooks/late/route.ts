@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { executeFlow } from "@/lib/flow-engine/engine";
 import { matchTrigger } from "@/lib/flow-engine/trigger-matcher";
 import type { Database } from "@/lib/types/database";
+import { recordAutomationEvent } from "@/lib/automation-events";
 import crypto from "crypto";
 
 // ── Zernio API webhook payload ───────────────────────────────────────────────
@@ -146,6 +147,23 @@ async function handleWebhook(request: NextRequest) {
     return NextResponse.json({ error: "Channel not found" }, { status: 404 });
   }
 
+  await recordAutomationEvent(supabase, {
+    workspace_id: channel.workspace_id,
+    channel_id: channel.id,
+    source: "webhook",
+    event_type: "webhook_received",
+    status: "info",
+    message: "Incoming DM webhook received",
+    metadata: {
+      providerEvent: payload.event,
+      accountId: account.id,
+      conversationId: conv.id,
+      platformMessageId: msg.platformMessageId,
+      senderId: msg.sender.id,
+      hasText: Boolean(msg.text),
+    },
+  });
+
   // Prevent loops: if the sender is another connected account in this
   // workspace, skip. This happens when both sides of a DM conversation
   // are connected (e.g. during testing).
@@ -159,6 +177,15 @@ async function handleWebhook(request: NextRequest) {
       .maybeSingle();
 
     if (senderChannel) {
+      await recordAutomationEvent(supabase, {
+        workspace_id: channel.workspace_id,
+        channel_id: channel.id,
+        source: "webhook",
+        event_type: "webhook_skipped",
+        status: "skipped",
+        message: "Sender is another connected account in this workspace",
+        metadata: { reason: "sender_is_own_account", senderUsername: msg.sender.username },
+      });
       return NextResponse.json({ ok: true, skipped: true, reason: "sender_is_own_account" });
     }
   }
@@ -282,6 +309,16 @@ async function handleWebhook(request: NextRequest) {
   }
 
   if (!conversation) {
+    await recordAutomationEvent(supabase, {
+      workspace_id: channel.workspace_id,
+      channel_id: channel.id,
+      contact_id: contactId,
+      source: "webhook",
+      event_type: "conversation_upsert_failed",
+      status: "error",
+      message: "Failed to upsert conversation for incoming DM",
+      metadata: { lateConversationId: conv.id },
+    });
     return NextResponse.json(
       { error: "Failed to upsert conversation" },
       { status: 500 }
@@ -333,6 +370,20 @@ async function handleWebhook(request: NextRequest) {
         incomingMessage
       );
       if (trigger) {
+        await recordAutomationEvent(supabase, {
+          workspace_id: channel.workspace_id,
+          flow_id: trigger.flow_id,
+          trigger_id: trigger.id,
+          channel_id: channel.id,
+          contact_id: contactId,
+          conversation_id: conversation.id,
+          source: "webhook",
+          event_type: "trigger_matched",
+          status: "success",
+          message: "Incoming DM matched a published trigger",
+          metadata: { triggerType: trigger.type, messageText: msg.text || null },
+        });
+
         try {
           await executeFlow(supabase, {
             triggerId: trigger.id,
@@ -347,9 +398,44 @@ async function handleWebhook(request: NextRequest) {
           });
         } catch (err) {
           console.error("Flow execution error:", err);
+          await recordAutomationEvent(supabase, {
+            workspace_id: channel.workspace_id,
+            flow_id: trigger.flow_id,
+            trigger_id: trigger.id,
+            channel_id: channel.id,
+            contact_id: contactId,
+            conversation_id: conversation.id,
+            source: "flow",
+            event_type: "flow_execution_failed",
+            status: "error",
+            message: err instanceof Error ? err.message : "Unknown flow execution error",
+          });
         }
+      } else {
+        await recordAutomationEvent(supabase, {
+          workspace_id: channel.workspace_id,
+          channel_id: channel.id,
+          contact_id: contactId,
+          conversation_id: conversation.id,
+          source: "webhook",
+          event_type: "trigger_not_matched",
+          status: "skipped",
+          message: "Incoming DM did not match any published trigger",
+          metadata: { messageText: msg.text || null },
+        });
       }
     }
+  } else {
+    await recordAutomationEvent(supabase, {
+      workspace_id: channel.workspace_id,
+      channel_id: channel.id,
+      contact_id: contactId,
+      conversation_id: conversation.id,
+      source: "webhook",
+      event_type: "automation_paused",
+      status: "skipped",
+      message: "Automation is paused for this conversation",
+    });
   }
 
   return NextResponse.json({ ok: true });
@@ -374,6 +460,23 @@ async function handleCommentWebhook(
     return NextResponse.json({ error: "Channel not found" }, { status: 404 });
   }
 
+  await recordAutomationEvent(supabase, {
+    workspace_id: channel.workspace_id,
+    channel_id: channel.id,
+    source: "webhook",
+    event_type: "webhook_received",
+    status: "info",
+    message: "Comment webhook received",
+    metadata: {
+      providerEvent: payload.event,
+      accountId: account.id,
+      commentId: comment.id,
+      postId: comment.postId || post.id || comment.platformPostId || post.platformPostId,
+      authorId: comment.author.id,
+      hasText: Boolean(comment.text),
+    },
+  });
+
   const signatureError = verifyWebhookSignature(channel, body, signature);
   if (signatureError) {
     return signatureError;
@@ -389,6 +492,15 @@ async function handleCommentWebhook(
       .maybeSingle();
 
     if (authorChannel) {
+      await recordAutomationEvent(supabase, {
+        workspace_id: channel.workspace_id,
+        channel_id: channel.id,
+        source: "webhook",
+        event_type: "webhook_skipped",
+        status: "skipped",
+        message: "Comment author is another connected account in this workspace",
+        metadata: { reason: "comment_author_is_own_account", authorUsername: comment.author.username },
+      });
       return NextResponse.json({ ok: true, skipped: true, reason: "comment_author_is_own_account" });
     }
   }
@@ -401,6 +513,15 @@ async function handleCommentWebhook(
     .maybeSingle();
 
   if (existingLog) {
+    await recordAutomationEvent(supabase, {
+      workspace_id: channel.workspace_id,
+      channel_id: channel.id,
+      source: "webhook",
+      event_type: "webhook_skipped",
+      status: "skipped",
+      message: "Duplicate comment webhook skipped",
+      metadata: { reason: "duplicate_comment", commentId: comment.id },
+    });
     return NextResponse.json({ ok: true, skipped: true, reason: "duplicate_comment" });
   }
 
@@ -430,8 +551,29 @@ async function handleCommentWebhook(
     .single();
 
   if (!matchedTrigger) {
+    await recordAutomationEvent(supabase, {
+      workspace_id: channel.workspace_id,
+      channel_id: channel.id,
+      source: "webhook",
+      event_type: "trigger_not_matched",
+      status: "skipped",
+      message: "Comment did not match any published comment trigger",
+      metadata: { commentId: comment.id, postId, commentText: comment.text },
+    });
     return NextResponse.json({ ok: true, matched: false });
   }
+
+  await recordAutomationEvent(supabase, {
+    workspace_id: channel.workspace_id,
+    flow_id: matchedTrigger.flow_id,
+    trigger_id: matchedTrigger.id,
+    channel_id: channel.id,
+    source: "webhook",
+    event_type: "trigger_matched",
+    status: "success",
+    message: "Comment matched a published trigger",
+    metadata: { triggerType: matchedTrigger.type, commentId: comment.id, postId },
+  });
 
   const { contactId, conversation } = await upsertCommentContactAndConversation(
     supabase,
@@ -440,6 +582,17 @@ async function handleCommentWebhook(
   );
 
   if (!contactId || !conversation) {
+    await recordAutomationEvent(supabase, {
+      workspace_id: channel.workspace_id,
+      flow_id: matchedTrigger.flow_id,
+      trigger_id: matchedTrigger.id,
+      channel_id: channel.id,
+      source: "webhook",
+      event_type: "conversation_upsert_failed",
+      status: "error",
+      message: "Failed to upsert comment contact or conversation",
+      metadata: { commentId: comment.id, postId },
+    });
     if (insertedLog) {
       await supabase
         .from("comment_logs")
@@ -453,6 +606,19 @@ async function handleCommentWebhook(
   }
 
   if (conversation.is_automation_paused) {
+    await recordAutomationEvent(supabase, {
+      workspace_id: channel.workspace_id,
+      flow_id: matchedTrigger.flow_id,
+      trigger_id: matchedTrigger.id,
+      channel_id: channel.id,
+      contact_id: contactId,
+      conversation_id: conversation.id,
+      source: "webhook",
+      event_type: "automation_paused",
+      status: "skipped",
+      message: "Automation is paused for this comment conversation",
+      metadata: { commentId: comment.id, postId },
+    });
     if (insertedLog) {
       await supabase
         .from("comment_logs")
@@ -508,6 +674,19 @@ async function handleCommentWebhook(
     }
   } catch (error) {
     console.error("Comment flow execution error:", error);
+    await recordAutomationEvent(supabase, {
+      workspace_id: channel.workspace_id,
+      flow_id: matchedTrigger.flow_id,
+      trigger_id: matchedTrigger.id,
+      channel_id: channel.id,
+      contact_id: contactId,
+      conversation_id: conversation.id,
+      source: "flow",
+      event_type: "flow_execution_failed",
+      status: "error",
+      message: error instanceof Error ? error.message : "Unknown comment flow execution error",
+      metadata: { commentId: comment.id, postId },
+    });
     if (insertedLog) {
       await supabase
         .from("comment_logs")

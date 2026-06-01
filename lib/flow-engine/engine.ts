@@ -20,6 +20,7 @@ import type {
 import { executeAiResponse } from "./nodes/ai-response";
 import { adaptMessage } from "./platform-adapter";
 import { createZernioClient } from "@/lib/zernio-client";
+import { recordAutomationEvent } from "@/lib/automation-events";
 
 export async function executeFlow(
   supabase: SupabaseClient<Database>,
@@ -47,7 +48,21 @@ export async function executeFlow(
     .eq("status", "published")
     .single();
 
-  if (!flow) return;
+  if (!flow) {
+    await recordAutomationEvent(supabase, {
+      workspace_id: context.workspaceId,
+      flow_id: context.flowId,
+      trigger_id: context.triggerId || null,
+      channel_id: context.channelId,
+      contact_id: context.contactId,
+      conversation_id: context.conversationId,
+      source: "flow",
+      event_type: "flow_not_found",
+      status: "error",
+      message: "Flow is missing or not published",
+    });
+    return;
+  }
 
   const nodes = flow.nodes as unknown as FlowNode[];
   const edges = flow.edges as unknown as FlowEdge[];
@@ -91,6 +106,24 @@ export async function executeFlow(
     .single();
 
   if (!session) return;
+
+  await recordAutomationEvent(supabase, {
+    workspace_id: context.workspaceId,
+    flow_id: context.flowId,
+    trigger_id: context.triggerId || null,
+    channel_id: context.channelId,
+    contact_id: context.contactId,
+    conversation_id: context.conversationId,
+    session_id: session.id,
+    source: "flow",
+    event_type: "flow_started",
+    status: "success",
+    message: "Published flow execution started",
+    metadata: {
+      incomingText: context.incomingMessage.text || null,
+      senderId: context.incomingMessage.sender?.id || null,
+    },
+  });
 
   // Track flow_started
   await supabase.from("analytics_events").insert({
@@ -288,8 +321,42 @@ async function traverseNodes(
     metadata: { nodeId: node.id, nodeType: node.type },
   });
 
+  await recordAutomationEvent(supabase, {
+    workspace_id: context.workspaceId,
+    flow_id: context.flowId,
+    trigger_id: context.triggerId || null,
+    channel_id: context.channelId,
+    contact_id: context.contactId,
+    conversation_id: context.conversationId,
+    session_id: sessionId,
+    source: "flow",
+    event_type: "node_executed",
+    status: "info",
+    message: `Executing ${node.type} node`,
+    metadata: { nodeId: node.id, nodeType: node.type },
+  });
+
   // Execute the node
-  const result = await executeNode(supabase, node, context, sessionId);
+  let result: string | void;
+  try {
+    result = await executeNode(supabase, node, context, sessionId);
+  } catch (error) {
+    await recordAutomationEvent(supabase, {
+      workspace_id: context.workspaceId,
+      flow_id: context.flowId,
+      trigger_id: context.triggerId || null,
+      channel_id: context.channelId,
+      contact_id: context.contactId,
+      conversation_id: context.conversationId,
+      session_id: sessionId,
+      source: "flow",
+      event_type: "node_failed",
+      status: "error",
+      message: error instanceof Error ? error.message : "Unknown node execution error",
+      metadata: { nodeId: node.id, nodeType: node.type },
+    });
+    throw error;
+  }
 
   // If the node pauses execution (delay, wait for input, human takeover), stop
   if (result === "pause") return;
@@ -941,6 +1008,18 @@ async function completeSession(
       .single();
 
     if (flow) {
+      await recordAutomationEvent(supabase, {
+        workspace_id: flow.workspace_id,
+        flow_id: session.flow_id,
+        channel_id: session.channel_id,
+        contact_id: session.contact_id,
+        session_id: sessionId,
+        source: "flow",
+        event_type: "flow_completed",
+        status: "success",
+        message: "Flow execution completed",
+      });
+
       await supabase.from("analytics_events").insert({
         workspace_id: flow.workspace_id,
         flow_id: session.flow_id,

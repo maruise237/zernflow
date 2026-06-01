@@ -4,6 +4,7 @@ import type { FlowExecutionContext, AiResponseNodeData } from "../types";
 import { createZernioClient } from "@/lib/zernio-client";
 import { generateText, createGateway } from "ai";
 import { createDeepSeek } from "@ai-sdk/deepseek";
+import { recordAutomationEvent } from "@/lib/automation-events";
 
 const DEFAULT_AI_MODEL = "deepseek/deepseek-v4-flash";
 
@@ -146,6 +147,20 @@ export async function executeAiResponse(
     });
   } catch (error) {
     console.error("Failed to generate or send AI response:", error);
+
+    await recordAutomationEvent(supabase, {
+      workspace_id: context.workspaceId,
+      flow_id: context.flowId,
+      trigger_id: context.triggerId || null,
+      channel_id: context.channelId,
+      contact_id: context.contactId,
+      conversation_id: context.conversationId,
+      source: "flow",
+      event_type: "ai_response_failed",
+      status: "error",
+      message: error instanceof Error ? error.message : "Unknown AI response error",
+      metadata: { model: data.model || DEFAULT_AI_MODEL },
+    });
 
     await supabase.from("messages").insert({
       conversation_id: context.conversationId,

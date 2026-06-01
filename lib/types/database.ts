@@ -887,6 +887,76 @@ export interface Database {
           },
         ];
       };
+      automation_events: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          flow_id: string | null;
+          trigger_id: string | null;
+          channel_id: string | null;
+          contact_id: string | null;
+          conversation_id: string | null;
+          session_id: string | null;
+          source: string;
+          event_type: string;
+          status: string;
+          message: string | null;
+          metadata: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          flow_id?: string | null;
+          trigger_id?: string | null;
+          channel_id?: string | null;
+          contact_id?: string | null;
+          conversation_id?: string | null;
+          session_id?: string | null;
+          source?: string;
+          event_type: string;
+          status?: string;
+          message?: string | null;
+          metadata?: Json;
+          created_at?: string;
+        };
+        Update: {
+          flow_id?: string | null;
+          trigger_id?: string | null;
+          channel_id?: string | null;
+          contact_id?: string | null;
+          conversation_id?: string | null;
+          session_id?: string | null;
+          source?: string;
+          event_type?: string;
+          status?: string;
+          message?: string | null;
+          metadata?: Json;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "automation_events_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "automation_events_flow_id_fkey";
+            columns: ["flow_id"];
+            isOneToOne: false;
+            referencedRelation: "flows";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "automation_events_channel_id_fkey";
+            columns: ["channel_id"];
+            isOneToOne: false;
+            referencedRelation: "channels";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       workspace_invites: {
         Row: {
           id: string;

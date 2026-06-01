@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRef, useState, useEffect } from "react";
 import {
   MessageCircle,
@@ -532,12 +533,12 @@ export function GrowthView({
             <p className="mt-2 text-sm text-muted-foreground">
               Vous avez besoin d'au moins un canal actif pour configurer l'automatisation des commentaires.
             </p>
-            <a
+            <Link
               href="/dashboard/channels"
               className="mt-4 inline-flex rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
             >
               Aller aux canaux
-            </a>
+            </Link>
           </div>
         )}
 
@@ -551,12 +552,12 @@ export function GrowthView({
               Publiez au moins un flux à utiliser comme réponse DM quand les
               commentaires correspondent à vos mots-clés.
             </p>
-            <a
+            <Link
               href="/dashboard/flows"
               className="mt-4 inline-flex rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
             >
               Aller aux flux
-            </a>
+            </Link>
           </div>
         )}
 

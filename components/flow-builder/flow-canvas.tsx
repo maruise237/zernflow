@@ -66,7 +66,7 @@ function getDefaultData(type: string, actionType?: string): Record<string, unkno
     case "delay":
       return { duration: 5, unit: "minutes" };
     case "aiResponse":
-      return { systemPrompt: "", model: "openai/gpt-4o-mini", temperature: 0.7, maxTokens: 500, contextMessages: 10 };
+      return { systemPrompt: "", model: "deepseek/deepseek-v4-flash", temperature: 0.7, maxTokens: 500, contextMessages: 10 };
     case "action":
       return { actionType: actionType || "addTag" };
     default:

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { executeFlow } from "@/lib/flow-engine/engine";
 import { matchTrigger } from "@/lib/flow-engine/trigger-matcher";
+import type { Database } from "@/lib/types/database";
 import crypto from "crypto";
 
 // ── Zernio API webhook payload ───────────────────────────────────────────────
@@ -49,6 +50,46 @@ interface WebhookPayload {
   timestamp: string;
 }
 
+interface CommentWebhookPayload {
+  id?: string;
+  event: "comment.received";
+  comment: {
+    id: string;
+    postId: string | null;
+    platformPostId: string;
+    platform: string;
+    text: string;
+    author: {
+      id: string;
+      username?: string;
+      name?: string;
+      picture?: string | null;
+    };
+    createdAt: string;
+    isReply: boolean;
+    parentCommentId: string | null;
+  };
+  post: {
+    id: string | null;
+    platformPostId: string;
+  };
+  account: {
+    id: string;
+    platform: string;
+    username: string;
+  };
+  timestamp: string;
+}
+
+type SupabaseService = Awaited<ReturnType<typeof createServiceClient>>;
+type Channel = Database["public"]["Tables"]["channels"]["Row"];
+type Trigger = Database["public"]["Tables"]["triggers"]["Row"];
+
+type CommentTriggerConfig = {
+  keywords?: Array<string | { value: string; matchType?: "exact" | "contains" | "startsWith" }>;
+  postIds?: string[];
+};
+
 // ── Webhook handler ─────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
@@ -67,11 +108,15 @@ async function handleWebhook(request: NextRequest) {
   const body = await request.text();
   const signature = request.headers.get("x-late-signature");
 
-  let payload: WebhookPayload;
+  let payload: WebhookPayload | CommentWebhookPayload | { event?: string };
   try {
     payload = JSON.parse(body);
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  if (payload.event === "comment.received") {
+    return handleCommentWebhook(payload as CommentWebhookPayload, body, signature);
   }
 
   // Only handle message.received events
@@ -79,7 +124,8 @@ async function handleWebhook(request: NextRequest) {
     return NextResponse.json({ ok: true, skipped: true });
   }
 
-  const { message: msg, conversation: conv, account, metadata } = payload;
+  const { message: msg, conversation: conv, account, metadata } =
+    payload as WebhookPayload;
 
   // Ignore outbound messages (sent by the bot itself) to prevent loops
   if (msg.direction === "outbound") {
@@ -117,31 +163,9 @@ async function handleWebhook(request: NextRequest) {
     }
   }
 
-  // Verify HMAC-SHA256 signature
-  if (channel.webhook_secret) {
-    if (!signature) {
-      return NextResponse.json(
-        { error: "Missing signature" },
-        { status: 401 }
-      );
-    }
-
-    const expected = crypto
-      .createHmac("sha256", channel.webhook_secret)
-      .update(body)
-      .digest("hex");
-
-    if (
-      !crypto.timingSafeEqual(
-        Buffer.from(signature),
-        Buffer.from(expected)
-      )
-    ) {
-      return NextResponse.json(
-        { error: "Invalid signature" },
-        { status: 401 }
-      );
-    }
+  const signatureError = verifyWebhookSignature(channel, body, signature);
+  if (signatureError) {
+    return signatureError;
   }
 
   // ── Upsert contact ───────────────────────────────────────────────────────
@@ -329,6 +353,345 @@ async function handleWebhook(request: NextRequest) {
   }
 
   return NextResponse.json({ ok: true });
+}
+
+async function handleCommentWebhook(
+  payload: CommentWebhookPayload,
+  body: string,
+  signature: string | null
+) {
+  const supabase = await createServiceClient();
+  const { comment, post, account } = payload;
+
+  const { data: channel } = await supabase
+    .from("channels")
+    .select("*")
+    .eq("late_account_id", account.id)
+    .eq("is_active", true)
+    .single();
+
+  if (!channel) {
+    return NextResponse.json({ error: "Channel not found" }, { status: 404 });
+  }
+
+  const signatureError = verifyWebhookSignature(channel, body, signature);
+  if (signatureError) {
+    return signatureError;
+  }
+
+  if (comment.author.username) {
+    const { data: authorChannel } = await supabase
+      .from("channels")
+      .select("id")
+      .eq("workspace_id", channel.workspace_id)
+      .eq("username", comment.author.username)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (authorChannel) {
+      return NextResponse.json({ ok: true, skipped: true, reason: "comment_author_is_own_account" });
+    }
+  }
+
+  const { data: existingLog } = await supabase
+    .from("comment_logs")
+    .select("id")
+    .eq("channel_id", channel.id)
+    .eq("platform_comment_id", comment.id)
+    .maybeSingle();
+
+  if (existingLog) {
+    return NextResponse.json({ ok: true, skipped: true, reason: "duplicate_comment" });
+  }
+
+  const matchedTrigger = await matchCommentTrigger(supabase, channel.id, {
+    text: comment.text,
+    postIds: [comment.postId, post.id, comment.platformPostId, post.platformPostId],
+  });
+
+  const postId = comment.postId || post.id || comment.platformPostId || post.platformPostId;
+
+  const { data: insertedLog } = await supabase
+    .from("comment_logs")
+    .insert({
+      channel_id: channel.id,
+      workspace_id: channel.workspace_id,
+      post_id: postId,
+      platform_comment_id: comment.id,
+      author_id: comment.author.id,
+      author_name: comment.author.name || null,
+      author_username: comment.author.username || null,
+      comment_text: comment.text,
+      matched_trigger_id: matchedTrigger?.id ?? null,
+      dm_sent: false,
+      reply_sent: false,
+    })
+    .select("id")
+    .single();
+
+  if (!matchedTrigger) {
+    return NextResponse.json({ ok: true, matched: false });
+  }
+
+  const { contactId, conversation } = await upsertCommentContactAndConversation(
+    supabase,
+    channel,
+    payload
+  );
+
+  if (!contactId || !conversation) {
+    if (insertedLog) {
+      await supabase
+        .from("comment_logs")
+        .update({ error: "Failed to upsert comment contact or conversation" })
+        .eq("id", insertedLog.id);
+    }
+    return NextResponse.json(
+      { error: "Failed to upsert comment contact or conversation" },
+      { status: 500 }
+    );
+  }
+
+  if (conversation.is_automation_paused) {
+    if (insertedLog) {
+      await supabase
+        .from("comment_logs")
+        .update({ error: "Automation paused for this contact conversation" })
+        .eq("id", insertedLog.id);
+    }
+    return NextResponse.json({ ok: true, skipped: true, reason: "automation_paused" });
+  }
+
+  try {
+    await executeFlow(supabase, {
+      triggerId: matchedTrigger.id,
+      flowId: matchedTrigger.flow_id,
+      channelId: channel.id,
+      contactId,
+      conversationId: conversation.id,
+      workspaceId: channel.workspace_id,
+      lateAccountId: account.id,
+      incomingMessage: {
+        text: comment.text,
+        sender: {
+          id: comment.author.id,
+          name: comment.author.name,
+          username: comment.author.username,
+        },
+      },
+      variables: {
+        comment_id: comment.id,
+        post_id: postId,
+        platform_post_id: comment.platformPostId || post.platformPostId,
+        comment_text: comment.text,
+        commenter_id: comment.author.id,
+        commenter_name: comment.author.name || "",
+        commenter_username: comment.author.username || "",
+      },
+    });
+
+    if (insertedLog) {
+      const { data: sentMessage } = await supabase
+        .from("messages")
+        .select("id")
+        .eq("conversation_id", conversation.id)
+        .eq("sent_by_flow_id", matchedTrigger.flow_id)
+        .eq("direction", "outbound")
+        .eq("status", "sent")
+        .limit(1)
+        .maybeSingle();
+
+      await supabase
+        .from("comment_logs")
+        .update({ dm_sent: Boolean(sentMessage) })
+        .eq("id", insertedLog.id);
+    }
+  } catch (error) {
+    console.error("Comment flow execution error:", error);
+    if (insertedLog) {
+      await supabase
+        .from("comment_logs")
+        .update({ error: error instanceof Error ? error.message : "Unknown error" })
+        .eq("id", insertedLog.id);
+    }
+  }
+
+  return NextResponse.json({ ok: true, matched: true });
+}
+
+function verifyWebhookSignature(
+  channel: Pick<Channel, "webhook_secret">,
+  body: string,
+  signature: string | null
+) {
+  if (!channel.webhook_secret) return null;
+  if (!signature) {
+    return NextResponse.json({ error: "Missing signature" }, { status: 401 });
+  }
+
+  const expected = crypto
+    .createHmac("sha256", channel.webhook_secret)
+    .update(body)
+    .digest("hex");
+
+  const expectedBuffer = Buffer.from(expected);
+  const signatureBuffer = Buffer.from(signature);
+  if (
+    expectedBuffer.length !== signatureBuffer.length ||
+    !crypto.timingSafeEqual(signatureBuffer, expectedBuffer)
+  ) {
+    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+  }
+
+  return null;
+}
+
+async function matchCommentTrigger(
+  supabase: SupabaseService,
+  channelId: string,
+  comment: { text: string; postIds: Array<string | null | undefined> }
+): Promise<Trigger | null> {
+  const { data: triggers } = await supabase
+    .from("triggers")
+    .select("*, flows!inner(status)")
+    .or(`channel_id.eq.${channelId},channel_id.is.null`)
+    .eq("type", "comment_keyword")
+    .eq("is_active", true)
+    .eq("flows.status", "published")
+    .order("priority", { ascending: false });
+
+  if (!triggers?.length) return null;
+
+  const normalizedText = comment.text.toLowerCase().trim();
+  const postIds = new Set(
+    comment.postIds.filter((id): id is string => Boolean(id))
+  );
+
+  for (const trigger of triggers) {
+    const config = trigger.config as CommentTriggerConfig;
+    const configuredPostIds = config.postIds?.filter(Boolean) ?? [];
+    const postMatches =
+      configuredPostIds.length === 0 ||
+      configuredPostIds.some((id) => postIds.has(id));
+
+    if (!postMatches) continue;
+    if (commentKeywordsMatch(normalizedText, config.keywords)) return trigger;
+  }
+
+  return null;
+}
+
+function commentKeywordsMatch(
+  normalizedText: string,
+  keywords: CommentTriggerConfig["keywords"]
+) {
+  if (!keywords?.length) return true;
+
+  return keywords.some((kw) => {
+    const keyword = (typeof kw === "string" ? kw : kw.value).toLowerCase().trim();
+    if (!keyword) return false;
+
+    const matchType =
+      (typeof kw === "object" && kw.matchType) || "contains";
+
+    if (matchType === "exact") return normalizedText === keyword;
+    if (matchType === "startsWith") return normalizedText.startsWith(keyword);
+    return normalizedText.includes(keyword);
+  });
+}
+
+async function upsertCommentContactAndConversation(
+  supabase: SupabaseService,
+  channel: Channel,
+  payload: CommentWebhookPayload
+) {
+  const { comment } = payload;
+  const authorName =
+    comment.author.name || comment.author.username || comment.author.id;
+
+  const { data: existingContactChannel } = await supabase
+    .from("contact_channels")
+    .select("contact_id")
+    .eq("channel_id", channel.id)
+    .eq("platform_sender_id", comment.author.id)
+    .maybeSingle();
+
+  let contactId = existingContactChannel?.contact_id ?? null;
+
+  if (contactId) {
+    await supabase
+      .from("contacts")
+      .update({
+        display_name: authorName,
+        avatar_url: comment.author.picture || null,
+        last_interaction_at: new Date().toISOString(),
+      })
+      .eq("id", contactId);
+  } else {
+    const { data: newContact } = await supabase
+      .from("contacts")
+      .insert({
+        workspace_id: channel.workspace_id,
+        display_name: authorName,
+        avatar_url: comment.author.picture || null,
+        last_interaction_at: new Date().toISOString(),
+      })
+      .select("id")
+      .single();
+
+    contactId = newContact?.id ?? null;
+    if (contactId) {
+      await supabase.from("contact_channels").insert({
+        contact_id: contactId,
+        channel_id: channel.id,
+        platform_sender_id: comment.author.id,
+        platform_username: comment.author.username || null,
+      });
+    }
+  }
+
+  if (!contactId) return { contactId: null, conversation: null };
+
+  const { data: existingConversation } = await supabase
+    .from("conversations")
+    .select("id, is_automation_paused, status")
+    .eq("channel_id", channel.id)
+    .eq("contact_id", contactId)
+    .maybeSingle();
+
+  const preview = comment.text.slice(0, 100);
+  if (existingConversation) {
+    const { data: conversation } = await supabase
+      .from("conversations")
+      .update({
+        last_message_at: new Date().toISOString(),
+        last_message_preview: preview,
+        ...(existingConversation.status === "closed" ? { status: "open" as const } : {}),
+      })
+      .eq("id", existingConversation.id)
+      .select("id, is_automation_paused")
+      .single();
+
+    return { contactId, conversation };
+  }
+
+  const { data: conversation } = await supabase
+    .from("conversations")
+    .insert({
+      workspace_id: channel.workspace_id,
+      channel_id: channel.id,
+      contact_id: contactId,
+      platform: channel.platform,
+      late_conversation_id: null,
+      status: "open",
+      last_message_at: new Date().toISOString(),
+      last_message_preview: preview,
+      unread_count: 0,
+    })
+    .select("id, is_automation_paused")
+    .single();
+
+  return { contactId, conversation };
 }
 
 // ── Global keywords ─────────────────────────────────────────────────────────

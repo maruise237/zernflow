@@ -1,6 +1,8 @@
 "use client";
 
 const POPULAR_MODELS = [
+  { id: "deepseek/deepseek-v4-flash", label: "DeepSeek V4 Flash" },
+  { id: "deepseek/deepseek-v4-pro", label: "DeepSeek V4 Pro" },
   { id: "openai/gpt-4o-mini", label: "GPT-4o Mini" },
   { id: "openai/gpt-4o", label: "GPT-4o" },
   { id: "anthropic/claude-sonnet-4-5-20250929", label: "Claude Sonnet 4.5" },
@@ -23,7 +25,7 @@ interface AiResponsePanelProps {
 
 export function AiResponsePanel({ data: rawData, onChange }: AiResponsePanelProps) {
   const data = rawData as AiResponsePanelData;
-  const currentModel = data.model || "openai/gpt-4o-mini";
+  const currentModel = data.model || "deepseek/deepseek-v4-flash";
 
   return (
     <div className="space-y-4">
@@ -53,7 +55,7 @@ export function AiResponsePanel({ data: rawData, onChange }: AiResponsePanelProp
           type="text"
           value={currentModel}
           onChange={(e) => onChange({ ...data, model: e.target.value })}
-          placeholder="provider/model (e.g. openai/gpt-4o-mini)"
+          placeholder="provider/model (e.g. deepseek/deepseek-v4-flash)"
           className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground/60 placeholder:font-sans focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
         <div className="mt-2 flex flex-wrap gap-1.5">
@@ -73,16 +75,16 @@ export function AiResponsePanel({ data: rawData, onChange }: AiResponsePanelProp
           ))}
         </div>
         <p className="mt-1.5 text-[11px] text-muted-foreground/60">
-          Tout modèle pris en charge par{" "}
+          DeepSeek fonctionne directement avec une cle DeepSeek. Les autres modeles peuvent passer par{" "}
           <a
             href="https://vercel.com/ai-gateway"
             target="_blank"
             rel="noopener noreferrer"
             className="underline hover:text-muted-foreground"
           >
-            Vercel AI Gateway
+            AI Gateway
           </a>
-          . Format : fournisseur/nom-du-modèle
+          . Format : fournisseur/nom-du-modele
         </p>
       </div>
 

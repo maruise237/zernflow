@@ -1289,7 +1289,7 @@ const templates: FlowTemplate[] = [
           label: "Réponse IA",
           systemPrompt:
             "Vous êtes un assistant service client utile. Répondez aux questions de façon concise et professionnelle. Si vous n'êtes pas sûr, dites : 'Je vais vous mettre en relation avec un spécialiste.'",
-          model: "openai/gpt-4o-mini",
+          model: "deepseek/deepseek-v4-flash",
           temperature: 0.3,
           maxTokens: 300,
           contextMessages: 5,

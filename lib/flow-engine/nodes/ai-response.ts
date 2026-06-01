@@ -3,13 +3,36 @@ import type { Database } from "@/lib/types/database";
 import type { FlowExecutionContext, AiResponseNodeData } from "../types";
 import { createZernioClient } from "@/lib/zernio-client";
 import { generateText, createGateway } from "ai";
+import { createDeepSeek } from "@ai-sdk/deepseek";
+
+const DEFAULT_AI_MODEL = "deepseek/deepseek-v4-flash";
+
+function resolveAiModel(modelId: string, workspaceAiKey?: string | null) {
+  const normalizedModel = modelId.trim() || DEFAULT_AI_MODEL;
+
+  if (normalizedModel.startsWith("deepseek/")) {
+    const deepseekModel = normalizedModel.replace(/^deepseek\//, "") || "deepseek-v4-flash";
+    const apiKey = process.env.DEEPSEEK_API_KEY || workspaceAiKey;
+
+    if (!apiKey) {
+      throw new Error("DeepSeek API key missing. Configure DEEPSEEK_API_KEY or add an AI key in Settings.");
+    }
+
+    const deepseek = createDeepSeek({ apiKey });
+    return deepseek(deepseekModel);
+  }
+
+  const aiGatewayKey = workspaceAiKey || process.env.AI_GATEWAY_API_KEY;
+  const gateway = createGateway({ apiKey: aiGatewayKey || undefined });
+  return gateway(normalizedModel);
+}
 
 export async function executeAiResponse(
   supabase: SupabaseClient<Database>,
   data: AiResponseNodeData,
   context: FlowExecutionContext
 ) {
-  // Get workspace for Zernio API key + AI Gateway key
+  // Get workspace for Zernio API key + AI provider key
   const { data: workspace } = await supabase
     .from("workspaces")
     .select("late_api_key_encrypted, ai_api_key")
@@ -77,11 +100,9 @@ export async function executeAiResponse(
   }
 
   try {
-    const model = data.model || "openai/gpt-4o-mini";
-    const aiGatewayKey = workspace.ai_api_key || process.env.AI_GATEWAY_API_KEY;
-    const gw = createGateway({ apiKey: aiGatewayKey || undefined });
+    const model = data.model || DEFAULT_AI_MODEL;
     const result = await generateText({
-      model: gw(model),
+      model: resolveAiModel(model, workspace.ai_api_key),
       system: data.systemPrompt || "You are a helpful customer support agent.",
       messages: aiMessages,
       temperature: data.temperature ?? 0.7,

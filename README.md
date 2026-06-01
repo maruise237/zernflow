@@ -16,7 +16,7 @@ ZernFlow is an open-source alternative to ManyChat. Build visual chatbot flows, 
 ### Features
 
 - **Visual Flow Builder** - Drag-and-drop chatbot builder with 15+ node types
-- **AI Response Node** - AI-powered replies via OpenAI, Anthropic, or Google (Vercel AI SDK)
+- **AI Response Node** - AI-powered replies via DeepSeek direct provider or AI Gateway fallback (Vercel AI SDK)
 - **Live Chat Inbox** - Real-time inbox with human takeover and conversation assignment
 - **Contact CRM** - Tags, custom fields, segments, and contact management
 - **Broadcasting** - Send targeted messages to contact segments
@@ -37,7 +37,7 @@ ZernFlow is an open-source alternative to ManyChat. Build visual chatbot flows, 
 - Node.js 18+
 - A [Supabase](https://supabase.com) project (free tier works)
 - A [Zernio](https://zernio.com) API key (entered in Settings after setup)
-- A [Vercel AI Gateway](https://vercel.com/ai-gateway) key (optional, for AI node, entered in Settings or env)
+- A DeepSeek API key or [Vercel AI Gateway](https://vercel.com/ai-gateway) key (optional, for AI node, entered in Settings or env)
 
 ### Setup
 
@@ -70,10 +70,11 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 CRON_SECRET=your-cron-secret              # For sequence processor + job scheduler
-# AI_GATEWAY_API_KEY=...                  # Optional, for self-hosted (Vercel handles this automatically)
+DEEPSEEK_API_KEY=...                      # Optional fallback for DeepSeek AI nodes
+# AI_GATEWAY_API_KEY=...                  # Optional fallback for non-DeepSeek model ids
 ```
 
-After starting the app, go to **Settings** to enter your Zernio API key and (optionally) AI Gateway key.
+After starting the app, go to **Settings** to enter your Zernio API key and (optionally) a DeepSeek or AI Gateway key.
 
 ### Dokploy scheduled jobs
 
@@ -133,7 +134,7 @@ Recv.  Engine     Chat           Processor
 | Framework | Next.js 16 (App Router, Turbopack) |
 | Database + Auth + Realtime | Supabase |
 | Flow Builder | React Flow (@xyflow/react) |
-| AI | Vercel AI SDK + [AI Gateway](https://vercel.com/ai-gateway) |
+| AI | Vercel AI SDK + DeepSeek direct provider, with [AI Gateway](https://vercel.com/ai-gateway) fallback |
 | UI | Tailwind CSS 4 |
 | Icons | @icons-pack/react-simple-icons |
 | Messaging | [Zernio API](https://zernio.com) |
@@ -144,7 +145,7 @@ Recv.  Engine     Chat           Processor
 |------|-------------|
 | Trigger | Keyword, postback, quick reply, welcome, default |
 | Send Message | Text, images, buttons, quick replies, carousels |
-| AI Response | AI-powered replies with conversation context (OpenAI, Anthropic, Google) |
+| AI Response | AI-powered replies with conversation context (DeepSeek, OpenAI, Anthropic, Google) |
 | Condition | If/else on tags, fields, platform, variables |
 | Delay | Wait seconds/minutes/hours/days |
 | Add/Remove Tag | Manage contact tags |

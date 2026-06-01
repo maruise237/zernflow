@@ -337,24 +337,24 @@ export function SettingsView({
 
           <hr className="border-border" />
 
-          {/* AI Gateway API Key */}
+          {/* AI Provider API Key */}
           <section>
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-muted-foreground" />
-              <h2 className="text-sm font-semibold">AI Gateway</h2>
+              <h2 className="text-sm font-semibold">DeepSeek / IA</h2>
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
-              Requis pour le bloc de flux Réponse IA. Utilise{" "}
+              Requis pour le bloc de flux Réponse IA. Utilise une cle DeepSeek directement, ou{" "}
               <a
                 href="https://vercel.com/ai-gateway"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-0.5 text-primary underline underline-offset-2 hover:opacity-80"
               >
-                Vercel AI Gateway
+                AI Gateway
                 <ExternalLink className="h-3 w-3" />
               </a>{" "}
-              pour accéder aux modèles OpenAI, Anthropic et Google avec une seule clé.
+              pour les autres fournisseurs comme OpenAI, Anthropic et Google.
               {workspace.hasAiKey && " Une clé est actuellement configurée."}
             </p>
 
@@ -366,7 +366,7 @@ export function SettingsView({
                 placeholder={
                   workspace.hasAiKey
                     ? "Saisissez une nouvelle clé pour remplacer l'actuelle"
-                    : "Saisissez votre clé API AI Gateway"
+                    : "Saisissez votre clé API DeepSeek ou AI Gateway"
                 }
                 className="w-full rounded-lg border border-input bg-background px-3 py-2 pr-10 text-sm font-mono placeholder:text-muted-foreground placeholder:font-sans focus:outline-none focus:ring-2 focus:ring-ring"
               />
@@ -386,7 +386,7 @@ export function SettingsView({
             {workspace.hasAiKey && (
               <p className="mt-1.5 flex items-center gap-1 text-xs text-green-600">
                 <Check className="h-3 w-3" />
-                Clé AI Gateway configurée
+                Clé IA configurée
               </p>
             )}
           </section>

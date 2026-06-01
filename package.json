@@ -6,14 +6,15 @@
     "node": "22.x"
   },
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev --webpack",
     "build": "next build",
     "start": "next start",
     "cron:jobs": "node scripts/run-cron.mjs jobs",
     "cron:sequences": "node scripts/run-cron.mjs sequences",
-    "lint": "next lint"
+    "lint": "eslint ."
   },
   "dependencies": {
+    "@ai-sdk/deepseek": "^2.0.35",
     "@icons-pack/react-simple-icons": "^13.11.2",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.95.3",

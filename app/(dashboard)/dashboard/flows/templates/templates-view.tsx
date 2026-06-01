@@ -393,6 +393,7 @@ const templates: FlowTemplate[] = [
             { value: "prompt", matchType: "contains" },
             { value: "guide", matchType: "contains" },
           ],
+          replyText: "Regardez vos DM",
         },
       },
       {

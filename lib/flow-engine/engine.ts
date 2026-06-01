@@ -1013,7 +1013,21 @@ async function executePrivateReply(
     .eq("id", context.workspaceId)
     .single();
 
-  if (!workspace?.late_api_key_encrypted) return;
+  if (!workspace?.late_api_key_encrypted) {
+    await recordAutomationEvent(supabase, {
+      workspace_id: context.workspaceId,
+      flow_id: context.flowId,
+      channel_id: context.channelId,
+      contact_id: context.contactId,
+      conversation_id: context.conversationId,
+      source: "flow",
+      event_type: "node_failed",
+      status: "error",
+      message: "Zernio API key missing for private reply",
+      metadata: { nodeType: "privateReply" },
+    });
+    return;
+  }
 
   const zernio = createZernioClient(workspace.late_api_key_encrypted);
 
@@ -1026,16 +1040,56 @@ async function executePrivateReply(
       .eq("id", context.channelId)
       .single();
 
-    if (!channel) return;
+    if (!channel) {
+      await recordAutomationEvent(supabase, {
+        workspace_id: context.workspaceId,
+        flow_id: context.flowId,
+        channel_id: context.channelId,
+        contact_id: context.contactId,
+        conversation_id: context.conversationId,
+        source: "flow",
+        event_type: "node_failed",
+        status: "error",
+        message: "Channel not found while resolving Zernio account for private reply",
+        metadata: { nodeType: "privateReply" },
+      });
+      return;
+    }
     lateAccountId = channel.late_account_id;
   }
 
   const commentId = context.variables?.comment_id || context.incomingMessage.sender?.id;
-  if (!commentId) return;
+  if (!commentId) {
+    await recordAutomationEvent(supabase, {
+      workspace_id: context.workspaceId,
+      flow_id: context.flowId,
+      channel_id: context.channelId,
+      contact_id: context.contactId,
+      conversation_id: context.conversationId,
+      source: "flow",
+      event_type: "node_failed",
+      status: "error",
+      message: "Comment id missing for private reply",
+      metadata: { nodeType: "privateReply" },
+    });
+    return;
+  }
 
   const postId = context.variables?.post_id;
   if (!postId) {
     console.error("No post_id in context variables for privateReply node");
+    await recordAutomationEvent(supabase, {
+      workspace_id: context.workspaceId,
+      flow_id: context.flowId,
+      channel_id: context.channelId,
+      contact_id: context.contactId,
+      conversation_id: context.conversationId,
+      source: "flow",
+      event_type: "node_failed",
+      status: "error",
+      message: "Post id missing for private reply",
+      metadata: { nodeType: "privateReply", commentId },
+    });
     return;
   }
 
@@ -1057,14 +1111,52 @@ async function executePrivateReply(
       sent_by_flow_id: context.flowId,
       status: "sent",
     });
+
+    await recordAutomationEvent(supabase, {
+      workspace_id: context.workspaceId,
+      flow_id: context.flowId,
+      channel_id: context.channelId,
+      contact_id: context.contactId,
+      conversation_id: context.conversationId,
+      source: "flow",
+      event_type: "node_executed",
+      status: "success",
+      message: "Private reply sent to comment author",
+      metadata: {
+        nodeType: "privateReply",
+        postId,
+        commentId,
+        accountId: lateAccountId,
+        hasText: Boolean(text),
+      },
+    });
   } catch (error) {
     console.error("Failed to send private reply:", error);
+    const message = error instanceof Error ? error.message : "Unknown private reply error";
     await supabase.from("messages").insert({
       conversation_id: context.conversationId,
       direction: "outbound",
       text,
       sent_by_flow_id: context.flowId,
       status: "failed",
+    });
+    await recordAutomationEvent(supabase, {
+      workspace_id: context.workspaceId,
+      flow_id: context.flowId,
+      channel_id: context.channelId,
+      contact_id: context.contactId,
+      conversation_id: context.conversationId,
+      source: "flow",
+      event_type: "node_failed",
+      status: "error",
+      message,
+      metadata: {
+        nodeType: "privateReply",
+        postId,
+        commentId,
+        accountId: lateAccountId,
+        hasText: Boolean(text),
+      },
     });
   }
 }

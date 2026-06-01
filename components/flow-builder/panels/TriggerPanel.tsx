@@ -15,6 +15,7 @@ interface TriggerPanelData {
   triggerType?: string;
   keywords?: Keyword[];
   payload?: string;
+  replyText?: string;
   activationScope?: "all" | "platforms" | "channels";
   platforms?: Platform[];
   channelIds?: string[];
@@ -340,6 +341,24 @@ export function TriggerPanel({ data: rawData, channels, onChange }: TriggerPanel
               Ajoutez les mots-clés qui déclencheront ce flux. Appuyez sur Entrée ou cliquez sur + pour ajouter.
             </p>
           )}
+        </div>
+      )}
+
+      {triggerType === "comment_keyword" && (
+        <div>
+          <label className="mb-2 block text-xs font-semibold text-foreground">
+            Reponse publique automatique
+          </label>
+          <input
+            type="text"
+            value={data.replyText || ""}
+            onChange={(e) => onChange({ ...data, replyText: e.target.value })}
+            placeholder="ex: Regardez vos DM"
+            className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+          />
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            Message poste en reponse au commentaire avant d'envoyer le DM prive.
+          </p>
         </div>
       )}
 

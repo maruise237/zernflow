@@ -12,6 +12,7 @@ type FlowNode = {
     triggerType?: TriggerType;
     keywords?: Array<string | { value: string; matchType?: string }>;
     payload?: string;
+    replyText?: string;
     activationScope?: "all" | "platforms" | "channels";
     platforms?: Platform[];
     channelIds?: string[];
@@ -39,7 +40,13 @@ function buildTriggerConfig(node: FlowNode): Json {
   }
 
   if (data.triggerType === "keyword" || data.triggerType === "comment_keyword") {
-    return { ...baseConfig, keywords: data.keywords || [] } as Json;
+    return {
+      ...baseConfig,
+      keywords: data.keywords || [],
+      ...(typeof data.replyText === "string" && data.replyText.trim()
+        ? { replyText: data.replyText.trim() }
+        : {}),
+    } as Json;
   }
 
   return baseConfig;

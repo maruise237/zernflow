@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { executeFlow } from "@/lib/flow-engine/engine";
 import { matchTrigger } from "@/lib/flow-engine/trigger-matcher";
+import { createZernioClient } from "@/lib/zernio-client";
 import type { Database } from "@/lib/types/database";
 import { recordAutomationEvent } from "@/lib/automation-events";
 import crypto from "crypto";
@@ -89,6 +90,7 @@ type Trigger = Database["public"]["Tables"]["triggers"]["Row"];
 type CommentTriggerConfig = {
   keywords?: Array<string | { value: string; matchType?: "exact" | "contains" | "startsWith" }>;
   postIds?: string[];
+  replyText?: string;
 };
 
 // ── Webhook handler ─────────────────────────────────────────────────────────
@@ -576,6 +578,22 @@ async function handleCommentWebhook(
     metadata: { triggerType: matchedTrigger.type, commentId: comment.id, postId },
   });
 
+  const publicReplyText = getCommentTriggerReplyText(matchedTrigger);
+  let publicReplySent = false;
+  let publicReplyError: string | null = null;
+  if (publicReplyText) {
+    const replyResult = await sendCommentTriggerPublicReply({
+      supabase,
+      channel,
+      trigger: matchedTrigger,
+      postId,
+      commentId: comment.id,
+      replyText: publicReplyText,
+    });
+    publicReplySent = replyResult.sent;
+    publicReplyError = replyResult.error;
+  }
+
   const { contactId, conversation } = await upsertCommentContactAndConversation(
     supabase,
     channel,
@@ -597,7 +615,10 @@ async function handleCommentWebhook(
     if (insertedLog) {
       await supabase
         .from("comment_logs")
-        .update({ error: "Failed to upsert comment contact or conversation" })
+        .update({
+          reply_sent: publicReplySent,
+          error: publicReplyError || "Failed to upsert comment contact or conversation",
+        })
         .eq("id", insertedLog.id);
     }
     return NextResponse.json(
@@ -623,7 +644,10 @@ async function handleCommentWebhook(
     if (insertedLog) {
       await supabase
         .from("comment_logs")
-        .update({ error: "Automation paused for this contact conversation" })
+        .update({
+          reply_sent: publicReplySent,
+          error: publicReplyError || "Automation paused for this contact conversation",
+        })
         .eq("id", insertedLog.id);
     }
     return NextResponse.json({ ok: true, skipped: true, reason: "automation_paused" });
@@ -670,7 +694,11 @@ async function handleCommentWebhook(
 
       await supabase
         .from("comment_logs")
-        .update({ dm_sent: Boolean(sentMessage) })
+        .update({
+          dm_sent: Boolean(sentMessage),
+          reply_sent: publicReplySent,
+          error: publicReplyError,
+        })
         .eq("id", insertedLog.id);
     }
   } catch (error) {
@@ -691,12 +719,92 @@ async function handleCommentWebhook(
     if (insertedLog) {
       await supabase
         .from("comment_logs")
-        .update({ error: error instanceof Error ? error.message : "Unknown error" })
+        .update({
+          reply_sent: publicReplySent,
+          error: [
+            publicReplyError,
+            error instanceof Error ? error.message : "Unknown error",
+          ].filter(Boolean).join(" | "),
+        })
         .eq("id", insertedLog.id);
     }
   }
 
   return NextResponse.json({ ok: true, matched: true });
+}
+
+function getCommentTriggerReplyText(trigger: Trigger) {
+  const config = trigger.config as CommentTriggerConfig;
+  return typeof config.replyText === "string" && config.replyText.trim()
+    ? config.replyText.trim()
+    : null;
+}
+
+async function sendCommentTriggerPublicReply({
+  supabase,
+  channel,
+  trigger,
+  postId,
+  commentId,
+  replyText,
+}: {
+  supabase: SupabaseService;
+  channel: Channel;
+  trigger: Trigger;
+  postId: string;
+  commentId: string;
+  replyText: string;
+}) {
+  const { data: workspace } = await supabase
+    .from("workspaces")
+    .select("late_api_key_encrypted")
+    .eq("id", channel.workspace_id)
+    .single();
+
+  if (!workspace?.late_api_key_encrypted) {
+    return { sent: false, error: "Zernio API key missing for public comment reply" };
+  }
+
+  try {
+    const zernio = createZernioClient(workspace.late_api_key_encrypted);
+    await zernio.comments.replyToInboxPost({
+      path: { postId },
+      body: {
+        accountId: channel.late_account_id,
+        message: replyText,
+        commentId,
+      },
+    });
+
+    await recordAutomationEvent(supabase, {
+      workspace_id: channel.workspace_id,
+      flow_id: trigger.flow_id,
+      trigger_id: trigger.id,
+      channel_id: channel.id,
+      source: "webhook",
+      event_type: "node_executed",
+      status: "success",
+      message: "Comment trigger public reply sent",
+      metadata: { postId, commentId, replyText },
+    });
+
+    return { sent: true, error: null };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown public reply error";
+    await recordAutomationEvent(supabase, {
+      workspace_id: channel.workspace_id,
+      flow_id: trigger.flow_id,
+      trigger_id: trigger.id,
+      channel_id: channel.id,
+      source: "webhook",
+      event_type: "node_failed",
+      status: "error",
+      message,
+      metadata: { postId, commentId, replyText },
+    });
+
+    return { sent: false, error: message };
+  }
 }
 
 function verifyWebhookSignature(

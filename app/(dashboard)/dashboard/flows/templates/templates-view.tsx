@@ -376,7 +376,7 @@ const templates: FlowTemplate[] = [
     id: "gated-resource-dm",
     name: "Ressource verrouillée en DM",
     description:
-      "Déclenchez depuis un mot-clé en commentaire, répondez publiquement, puis envoyez la ressource promise en DM privé au commentateur.",
+      "Déclenchez depuis un mot-clé en commentaire, vérifiez l'abonnement, demandez aux non-abonnés de s'abonner en DM, puis envoyez la ressource promise après confirmation.",
     category: "Marketing",
     icon: Gift,
     iconColor: "text-emerald-600",
@@ -397,20 +397,100 @@ const templates: FlowTemplate[] = [
         },
       },
       {
-        id: "deliver-resource",
-        type: "action",
+        id: "check-subscriber",
+        type: "condition",
         position: { x: 320, y: 150 },
         data: {
-          label: "Envoyer la ressource en DM",
+          label: "Déjà abonné ?",
+          logic: "and",
+          conditions: [
+            { field: "is_subscribed", operator: "equals", value: "true" },
+          ],
+        },
+      },
+      {
+        id: "deliver-existing",
+        type: "action",
+        position: { x: 80, y: 340 },
+        data: {
+          label: "Envoyer la ressource",
           actionType: "privateReply",
           text:
-            "Merci pour votre commentaire ! Voici la ressource promise :\n\n{{resource_link}}\n\nRépondez ici si vous voulez de l'aide pour l'utiliser.",
+            "Merci pour votre commentaire ! Vous êtes déjà abonné, voici donc la ressource :\n\n{{resource_link}}\n\nBonne découverte !",
+        },
+      },
+      {
+        id: "ask-subscribe",
+        type: "action",
+        position: { x: 560, y: 320 },
+        data: {
+          label: "Demander l'abonnement",
+          actionType: "privateReply",
+          text:
+            "Presque terminé. Pour recevoir la ressource, abonnez-vous d'abord à ce compte. Ensuite, appuyez sur le bouton de confirmation dans ce DM et je vous l'enverrai.",
+        },
+      },
+      {
+        id: "confirm-button",
+        type: "sendMessage",
+        position: { x: 560, y: 480 },
+        data: {
+          label: "Bouton de confirmation",
+          messages: [
+            {
+              text: "Une fois abonné, appuyez ci-dessous pour que je vérifie et vous envoie la ressource.",
+              buttons: [
+                {
+                  title: "Je me suis abonné",
+                  type: "postback",
+                  payload: "CONFIRM_SUBSCRIBED_FOR_RESOURCE",
+                },
+              ],
+            },
+          ],
+        },
+      },
+      {
+        id: "wait-confirmation",
+        type: "action",
+        position: { x: 560, y: 640 },
+        data: {
+          label: "Attendre la confirmation",
+          actionType: "smartDelay",
+          timeout: 24,
+          timeoutUnit: "hours",
+        },
+      },
+      {
+        id: "recheck-subscriber",
+        type: "condition",
+        position: { x: 560, y: 800 },
+        data: {
+          label: "Abonné maintenant ?",
+          logic: "and",
+          conditions: [
+            { field: "is_subscribed", operator: "equals", value: "true" },
+          ],
+        },
+      },
+      {
+        id: "deliver-new",
+        type: "sendMessage",
+        position: { x: 340, y: 980 },
+        data: {
+          label: "Livrer la ressource",
+          messages: [
+            {
+              text:
+                "Parfait, merci pour votre abonnement ! Voici la ressource :\n\n{{resource_link}}\n\nRépondez si vous voulez de l'aide pour l'utiliser.",
+            },
+          ],
         },
       },
       {
         id: "tag-resource-sent",
         type: "action",
-        position: { x: 320, y: 300 },
+        position: { x: 340, y: 1140 },
         data: {
           label: "Étiqueter ressource envoyée",
           actionType: "addTag",
@@ -418,10 +498,39 @@ const templates: FlowTemplate[] = [
           tagName: "resource-sent",
         },
       },
+      {
+        id: "remind-subscribe",
+        type: "sendMessage",
+        position: { x: 760, y: 980 },
+        data: {
+          label: "Pas encore abonné",
+          messages: [
+            {
+              text:
+                "Je ne peux pas encore vérifier l'abonnement. Abonnez-vous d'abord, puis appuyez de nouveau sur le bouton de confirmation et je déverrouillerai la ressource.",
+              buttons: [
+                {
+                  title: "Vérifier encore",
+                  type: "postback",
+                  payload: "CONFIRM_SUBSCRIBED_FOR_RESOURCE",
+                },
+              ],
+            },
+          ],
+        },
+      },
     ],
     edges: [
-      { id: "e1", source: "trigger-comment", target: "deliver-resource" },
-      { id: "e2", source: "deliver-resource", target: "tag-resource-sent" },
+      { id: "e1", source: "trigger-comment", target: "check-subscriber" },
+      { id: "e2", source: "check-subscriber", target: "deliver-existing", sourceHandle: "true" },
+      { id: "e3", source: "check-subscriber", target: "ask-subscribe", sourceHandle: "false" },
+      { id: "e4", source: "ask-subscribe", target: "confirm-button" },
+      { id: "e5", source: "confirm-button", target: "wait-confirmation" },
+      { id: "e6", source: "wait-confirmation", target: "recheck-subscriber" },
+      { id: "e7", source: "recheck-subscriber", target: "deliver-new", sourceHandle: "true" },
+      { id: "e8", source: "deliver-new", target: "tag-resource-sent" },
+      { id: "e9", source: "recheck-subscriber", target: "remind-subscribe", sourceHandle: "false" },
+      { id: "e10", source: "remind-subscribe", target: "wait-confirmation" },
     ],
   },
   {

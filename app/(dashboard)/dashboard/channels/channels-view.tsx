@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import {
   Check,
   Copy,
+  AlertTriangle,
   Plug,
   Plus,
   Power,
@@ -17,6 +18,12 @@ import { PlatformIcon } from "@/components/platform-icon";
 import type { Database, Platform } from "@/lib/types/database";
 
 type Channel = Database["public"]["Tables"]["channels"]["Row"];
+type WebhookSyncStatus = {
+  skipped?: boolean;
+  action?: string;
+  url?: string;
+  reason?: string;
+};
 
 const platformLabels: Record<Platform, string> = {
   facebook: "Facebook",
@@ -83,13 +90,16 @@ function getDmLink(platform: Platform, username: string | null): { url: string |
 
 export function ChannelsView({
   channels: initialChannels,
+  webhookUrl,
 }: {
   channels: Channel[];
   workspaceId: string;
+  webhookUrl: string;
 }) {
   const [channels, setChannels] = useState(initialChannels);
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
+  const [webhookStatus, setWebhookStatus] = useState<WebhookSyncStatus | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [showPlatformPicker, setShowPlatformPicker] = useState(false);
   const [connecting, setConnecting] = useState<string | null>(null);
@@ -151,9 +161,10 @@ export function ChannelsView({
       }
 
       setChannels(data.channels ?? []);
-      const { created, updated, deactivated } = data.synced;
+      const { created, updated, deactivated, webhook } = data.synced;
+      setWebhookStatus(webhook ?? null);
       if (created === 0 && updated === 0 && deactivated === 0) {
-        setSyncMessage("Tous les canaux sont à jour");
+        setSyncMessage(webhook?.skipped ? "Canaux à jour, webhook non configuré" : "Tous les canaux sont à jour");
       } else {
         const parts = [];
         if (created > 0) parts.push(`${created} ajouté${created === 1 ? "" : "s"}`);
@@ -249,6 +260,68 @@ export function ChannelsView({
 
       {/* Channel cards */}
       <div className="flex-1 overflow-auto p-8">
+        <section className="mb-6 rounded-xl border border-border bg-card p-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <Plug className="h-4 w-4 text-muted-foreground" />
+                <h2 className="text-sm font-semibold">Webhook Zernio</h2>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Utilisé pour recevoir les DM entrants et les commentaires réels.
+              </p>
+              <div className="mt-3 rounded-lg bg-muted px-3 py-2 font-mono text-xs text-muted-foreground">
+                {webhookUrl && !webhookUrl.startsWith("/api")
+                  ? webhookUrl
+                  : "Configurez NEXT_PUBLIC_APP_URL ou CRON_BASE_URL avec votre URL publique"}
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {["message.received", "comment.received"].map((event) => (
+                  <span
+                    key={event}
+                    className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary"
+                  >
+                    {event}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="min-w-0 lg:w-72">
+              {webhookStatus ? (
+                <div
+                  className={cn(
+                    "rounded-lg border px-3 py-2 text-xs",
+                    webhookStatus.skipped
+                      ? "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300"
+                      : "border-green-200 bg-green-50 text-green-800 dark:border-green-900 dark:bg-green-950 dark:text-green-300"
+                  )}
+                >
+                  <div className="flex items-center gap-2 font-medium">
+                    {webhookStatus.skipped ? (
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                    ) : (
+                      <Check className="h-3.5 w-3.5" />
+                    )}
+                    {webhookStatus.skipped
+                      ? "Webhook non configuré"
+                      : webhookStatus.action === "created"
+                        ? "Webhook créé"
+                        : "Webhook mis à jour"}
+                  </div>
+                  {webhookStatus.reason && (
+                    <p className="mt-1 opacity-80">{webhookStatus.reason}</p>
+                  )}
+                </div>
+              ) : (
+                <p className="rounded-lg border border-dashed border-border px-3 py-2 text-xs text-muted-foreground">
+                  Lancez “Synchroniser” pour créer ou mettre à jour le webhook Zernio.
+                </p>
+              )}
+            </div>
+          </div>
+        </section>
+
         {channels.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20">
             <Plug className="h-10 w-10 text-muted-foreground/40" />

@@ -20,6 +20,7 @@ const webhookRoute = read("app/api/webhooks/late/route.ts");
 const engine = read("lib/flow-engine/engine.ts");
 const aiResponse = read("lib/flow-engine/nodes/ai-response.ts");
 const diagnosticsPage = read("app/(dashboard)/dashboard/diagnostics/page.tsx");
+const channelsView = read("app/(dashboard)/dashboard/channels/channels-view.tsx");
 const sidebar = read("components/sidebar.tsx");
 
 assertContains(migration, "create table if not exists automation_events", "diagnostics migration");
@@ -34,6 +35,9 @@ assertContains(engine, "node_executed", "flow engine diagnostics");
 assertContains(engine, "flow_completed", "flow engine diagnostics");
 assertContains(aiResponse, "ai_response_failed", "AI node diagnostics");
 assertContains(diagnosticsPage, "Automation Diagnostics", "diagnostics page");
+assertContains(channelsView, "Webhook Zernio", "channels webhook status");
+assertContains(channelsView, "message.received", "channels webhook status");
+assertContains(channelsView, "comment.received", "channels webhook status");
 assertContains(sidebar, "/dashboard/diagnostics", "sidebar diagnostics link");
 
 console.log("automation diagnostics verification passed");

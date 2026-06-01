@@ -14,6 +14,7 @@ export default async function ChannelsPage() {
     <ChannelsView
       channels={channels ?? []}
       workspaceId={workspace.id}
+      webhookUrl={`${(process.env.NEXT_PUBLIC_APP_URL || process.env.CRON_BASE_URL || "").replace(/\/$/, "")}/api/webhooks/late`}
     />
   );
 }

@@ -1094,6 +1094,38 @@ async function executePrivateReply(
   }
 
   const text = interpolateVariables(data.text, context.variables || {});
+  const commentCreatedAt = context.variables?.comment_created_at;
+  if (isCommentPrivateReplyExpired(commentCreatedAt)) {
+    const message =
+      "Private reply skipped: comment is older than 7 days, which Facebook/Instagram do not allow";
+    await supabase.from("messages").insert({
+      conversation_id: context.conversationId,
+      direction: "outbound",
+      text,
+      sent_by_flow_id: context.flowId,
+      status: "failed",
+    });
+    await recordAutomationEvent(supabase, {
+      workspace_id: context.workspaceId,
+      flow_id: context.flowId,
+      channel_id: context.channelId,
+      contact_id: context.contactId,
+      conversation_id: context.conversationId,
+      source: "flow",
+      event_type: "node_failed",
+      status: "error",
+      message,
+      metadata: {
+        nodeType: "privateReply",
+        postId,
+        commentId,
+        accountId: lateAccountId,
+        commentCreatedAt,
+        limit: "7_days",
+      },
+    });
+    return;
+  }
 
   try {
     await zernio.comments.sendPrivateReplyToComment({
@@ -1159,6 +1191,14 @@ async function executePrivateReply(
       },
     });
   }
+}
+
+function isCommentPrivateReplyExpired(commentCreatedAt?: string) {
+  if (!commentCreatedAt) return false;
+  const createdAtMs = Date.parse(commentCreatedAt);
+  if (Number.isNaN(createdAtMs)) return false;
+  const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+  return Date.now() - createdAtMs > sevenDaysMs;
 }
 
 async function completeSession(

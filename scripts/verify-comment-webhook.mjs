@@ -23,6 +23,7 @@ assertContains(webhookRoute, "comment_keyword", "webhook route");
 assertContains(webhookRoute, "comment_logs", "webhook route");
 assertContains(webhookRoute, "comment_id", "comment flow context");
 assertContains(webhookRoute, "post_id", "comment flow context");
+assertContains(webhookRoute, "comment_created_at", "comment flow context");
 assertContains(webhookRoute, "dm_sent", "comment log outcome");
 assertContains(webhookRoute, "replyText", "comment trigger public reply");
 assertContains(webhookRoute, "sendCommentTriggerPublicReply", "comment trigger public reply");
@@ -37,5 +38,7 @@ assertContains(zernioWebhook, "CRON_BASE_URL", "webhook helper");
 assertContains(flowEngine, "Private reply sent to comment author", "private reply telemetry");
 assertContains(flowEngine, "Unknown private reply error", "private reply telemetry");
 assertContains(flowEngine, "Post id missing for private reply", "private reply telemetry");
+assertContains(flowEngine, "isCommentPrivateReplyExpired", "private reply 7 day guard");
+assertContains(flowEngine, "older than 7 days", "private reply 7 day guard");
 
 console.log("comment webhook verification passed");

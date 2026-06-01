@@ -674,6 +674,7 @@ async function handleCommentWebhook(
         comment_id: comment.id,
         post_id: postId,
         platform_post_id: comment.platformPostId || post.platformPostId,
+        comment_created_at: comment.createdAt,
         comment_text: comment.text,
         commenter_id: comment.author.id,
         commenter_name: comment.author.name || "",

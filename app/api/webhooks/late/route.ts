@@ -693,12 +693,31 @@ async function handleCommentWebhook(
         .limit(1)
         .maybeSingle();
 
+      let executionError = publicReplyError;
+      if (!sentMessage) {
+        const { data: failedEvent } = await supabase
+          .from("automation_events")
+          .select("message")
+          .eq("workspace_id", channel.workspace_id)
+          .eq("flow_id", matchedTrigger.flow_id)
+          .eq("conversation_id", conversation.id)
+          .eq("status", "error")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        executionError =
+          publicReplyError ||
+          failedEvent?.message ||
+          "No outbound DM was sent by the matched flow";
+      }
+
       await supabase
         .from("comment_logs")
         .update({
           dm_sent: Boolean(sentMessage),
           reply_sent: publicReplySent,
-          error: publicReplyError,
+          error: executionError,
         })
         .eq("id", insertedLog.id);
     }

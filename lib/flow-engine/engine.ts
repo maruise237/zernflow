@@ -1094,6 +1094,11 @@ async function executePrivateReply(
   }
 
   const text = interpolateVariables(data.text, context.variables || {});
+  const buttons = normalizePrivateReplyButtons(data.buttons, context.variables || {});
+  const quickReplies =
+    buttons.length > 0
+      ? []
+      : normalizePrivateReplyQuickReplies(data.quickReplies, context.variables || {});
   const commentCreatedAt = context.variables?.comment_created_at;
   if (isCommentPrivateReplyExpired(commentCreatedAt)) {
     const message =
@@ -1128,9 +1133,16 @@ async function executePrivateReply(
   }
 
   try {
+    const body: Record<string, unknown> = { accountId: lateAccountId, message: text };
+    if (buttons.length > 0) {
+      body.buttons = buttons;
+    } else if (quickReplies.length > 0) {
+      body.quickReplies = quickReplies;
+    }
+
     await zernio.comments.sendPrivateReplyToComment({
       path: { postId, commentId },
-      body: { accountId: lateAccountId, message: text },
+      body: body as Parameters<typeof zernio.comments.sendPrivateReplyToComment>[0]["body"],
     });
 
     await supabase.from("messages").insert({
@@ -1160,6 +1172,8 @@ async function executePrivateReply(
         commentId,
         accountId: lateAccountId,
         hasText: Boolean(text),
+        buttonCount: buttons.length,
+        quickReplyCount: quickReplies.length,
       },
     });
   } catch (error) {
@@ -1188,9 +1202,42 @@ async function executePrivateReply(
         commentId,
         accountId: lateAccountId,
         hasText: Boolean(text),
+        buttonCount: buttons.length,
+        quickReplyCount: quickReplies.length,
       },
     });
   }
+}
+
+function normalizePrivateReplyButtons(
+  buttons: PrivateReplyNodeData["buttons"] | undefined,
+  variables: Record<string, string>
+) {
+  return (buttons || [])
+    .map((button) => ({
+      title: interpolateVariables(button.title || "", variables).trim(),
+      type: button.type || "postback",
+      payload: button.payload ? interpolateVariables(button.payload, variables).trim() : undefined,
+      url: button.url ? interpolateVariables(button.url, variables).trim() : undefined,
+    }))
+    .filter((button) =>
+      button.title &&
+      ((button.type === "url" && button.url) || (button.type !== "url" && button.payload))
+    )
+    .slice(0, 3);
+}
+
+function normalizePrivateReplyQuickReplies(
+  quickReplies: PrivateReplyNodeData["quickReplies"] | undefined,
+  variables: Record<string, string>
+) {
+  return (quickReplies || [])
+    .map((reply) => ({
+      title: interpolateVariables(reply.title || "", variables).trim(),
+      payload: interpolateVariables(reply.payload || "", variables).trim(),
+    }))
+    .filter((reply) => reply.title && reply.payload)
+    .slice(0, 13);
 }
 
 function isCommentPrivateReplyExpired(commentCreatedAt?: string) {

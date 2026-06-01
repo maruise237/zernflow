@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { NodeType } from "@/lib/types/database";
@@ -27,6 +27,7 @@ interface ActionPanelData {
   sequenceId?: string;
   text?: string;
   imageUrl?: string;
+  buttons?: Array<{ title: string; type: "postback" | "url"; payload?: string; url?: string }>;
   [key: string]: unknown;
 }
 
@@ -80,6 +81,32 @@ export function ActionPanel({ data: rawData, onChange }: ActionPanelProps) {
 /* ───────── Tag Config ───────── */
 function ReplyConfig({ data, onChange }: ActionSubPanelProps) {
   const isPrivate = data.actionType === "privateReply";
+  const buttons = useMemo(() => data.buttons || [], [data.buttons]);
+
+  const addButton = useCallback(() => {
+    if (buttons.length >= 3) return;
+    onChange({
+      ...data,
+      buttons: [...buttons, { title: "", type: "postback", payload: "" }],
+    });
+  }, [buttons, data, onChange]);
+
+  const updateButton = useCallback(
+    (index: number, updated: { title: string; type: "postback" | "url"; payload?: string; url?: string }) => {
+      const nextButtons = [...buttons];
+      nextButtons[index] = updated;
+      onChange({ ...data, buttons: nextButtons });
+    },
+    [buttons, data, onChange]
+  );
+
+  const removeButton = useCallback(
+    (index: number) => {
+      const nextButtons = buttons.filter((_, i) => i !== index);
+      onChange({ ...data, buttons: nextButtons.length > 0 ? nextButtons : undefined });
+    },
+    [buttons, data, onChange]
+  );
 
   return (
     <div className="space-y-4">
@@ -111,18 +138,93 @@ function ReplyConfig({ data, onChange }: ActionSubPanelProps) {
       </div>
 
       {isPrivate && (
-        <div>
-          <label className="mb-2 block text-xs font-semibold text-foreground">
-            URL d'image facultative
-          </label>
-          <input
-            type="url"
-            value={data.imageUrl || ""}
-            onChange={(e) => onChange({ ...data, imageUrl: e.target.value })}
-            placeholder="https://..."
-            className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
-          />
-        </div>
+        <>
+          <div>
+            <label className="mb-2 block text-xs font-semibold text-foreground">
+              URL d'image facultative
+            </label>
+            <input
+              type="url"
+              value={data.imageUrl || ""}
+              onChange={(e) => onChange({ ...data, imageUrl: e.target.value })}
+              placeholder="https://..."
+              className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+          </div>
+
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <label className="block text-xs font-semibold text-foreground">
+                Boutons du DM privé ({buttons.length}/3)
+              </label>
+              {buttons.length < 3 && (
+                <button
+                  type="button"
+                  onClick={addButton}
+                  className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
+                >
+                  <Plus className="h-3 w-3" />
+                  Ajouter
+                </button>
+              )}
+            </div>
+            <div className="space-y-2">
+              {buttons.map((button, index) => (
+                <div key={index} className="space-y-2 rounded-lg border border-border bg-card p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <input
+                      type="text"
+                      value={button.title}
+                      onChange={(e) => updateButton(index, { ...button, title: e.target.value })}
+                      placeholder="Titre du bouton"
+                      className="min-w-0 flex-1 rounded-md border border-border bg-background px-2 py-1.5 text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeButton(index)}
+                      className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                      aria-label="Supprimer le bouton"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <select
+                    value={button.type}
+                    onChange={(e) =>
+                      updateButton(index, {
+                        title: button.title,
+                        type: e.target.value as "postback" | "url",
+                        payload: e.target.value === "postback" ? button.payload || "" : undefined,
+                        url: e.target.value === "url" ? button.url || "" : undefined,
+                      })
+                    }
+                    className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm"
+                  >
+                    <option value="postback">Action interne</option>
+                    <option value="url">Lien URL</option>
+                  </select>
+                  <input
+                    type={button.type === "url" ? "url" : "text"}
+                    value={button.type === "url" ? button.url || "" : button.payload || ""}
+                    onChange={(e) =>
+                      updateButton(index, {
+                        ...button,
+                        ...(button.type === "url"
+                          ? { url: e.target.value }
+                          : { payload: e.target.value }),
+                      })
+                    }
+                    placeholder={button.type === "url" ? "https://..." : "Payload du bouton"}
+                    className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm"
+                  />
+                </div>
+              ))}
+            </div>
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              Recommandé pour les personnes non abonnées: les boutons restent visibles dans les demandes de message.
+            </p>
+          </div>
+        </>
       )}
     </div>
   );

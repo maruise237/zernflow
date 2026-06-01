@@ -38,6 +38,8 @@ assertContains(zernioWebhook, "CRON_BASE_URL", "webhook helper");
 assertContains(flowEngine, "Private reply sent to comment author", "private reply telemetry");
 assertContains(flowEngine, "Unknown private reply error", "private reply telemetry");
 assertContains(flowEngine, "Post id missing for private reply", "private reply telemetry");
+assertContains(flowEngine, "normalizePrivateReplyButtons", "private reply buttons");
+assertContains(flowEngine, "body.buttons", "private reply buttons");
 assertContains(flowEngine, "isCommentPrivateReplyExpired", "private reply 7 day guard");
 assertContains(flowEngine, "older than 7 days", "private reply 7 day guard");
 

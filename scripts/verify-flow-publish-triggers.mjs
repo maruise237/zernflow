@@ -49,6 +49,7 @@ assertContains(templatesView, "Regardez vos DM", "gated resource template commen
 assertContains(templatesView, "check-subscriber", "gated resource subscription branch");
 assertContains(templatesView, "CONFIRM_SUBSCRIBED_FOR_RESOURCE", "gated resource confirmation branch");
 assertContains(templatesView, "actionType: \"privateReply\"", "gated resource private reply");
+assertContains(templatesView, "buttons: [", "gated resource private reply button");
 assertContains(flowCanvas, "publishMessage", "flow canvas publish feedback");
 assertContains(flowCanvas, "activation", "flow canvas publish feedback");
 assertContains(zernioWebhook, "message.received", "zernio webhook helper");

@@ -132,6 +132,13 @@ export interface PrivateReplyNodeData {
   /** Text to send as a private DM to the commenter. Supports {{variable}} interpolation. */
   text: string;
   imageUrl?: string;
+  quickReplies?: Array<{ title: string; payload: string }>;
+  buttons?: Array<{
+    title: string;
+    type: "postback" | "url";
+    payload?: string;
+    url?: string;
+  }>;
 }
 
 export interface AiResponseNodeData {

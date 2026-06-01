@@ -428,24 +428,11 @@ const templates: FlowTemplate[] = [
           actionType: "privateReply",
           text:
             "Presque terminé. Pour recevoir la ressource, abonnez-vous d'abord à ce compte. Ensuite, appuyez sur le bouton de confirmation dans ce DM et je vous l'enverrai.",
-        },
-      },
-      {
-        id: "confirm-button",
-        type: "sendMessage",
-        position: { x: 560, y: 480 },
-        data: {
-          label: "Bouton de confirmation",
-          messages: [
+          buttons: [
             {
-              text: "Une fois abonné, appuyez ci-dessous pour que je vérifie et vous envoie la ressource.",
-              buttons: [
-                {
-                  title: "Je me suis abonné",
-                  type: "postback",
-                  payload: "CONFIRM_SUBSCRIBED_FOR_RESOURCE",
-                },
-              ],
+              title: "Je me suis abonné",
+              type: "postback",
+              payload: "CONFIRM_SUBSCRIBED_FOR_RESOURCE",
             },
           ],
         },
@@ -524,8 +511,7 @@ const templates: FlowTemplate[] = [
       { id: "e1", source: "trigger-comment", target: "check-subscriber" },
       { id: "e2", source: "check-subscriber", target: "deliver-existing", sourceHandle: "true" },
       { id: "e3", source: "check-subscriber", target: "ask-subscribe", sourceHandle: "false" },
-      { id: "e4", source: "ask-subscribe", target: "confirm-button" },
-      { id: "e5", source: "confirm-button", target: "wait-confirmation" },
+      { id: "e4", source: "ask-subscribe", target: "wait-confirmation" },
       { id: "e6", source: "wait-confirmation", target: "recheck-subscriber" },
       { id: "e7", source: "recheck-subscriber", target: "deliver-new", sourceHandle: "true" },
       { id: "e8", source: "deliver-new", target: "tag-resource-sent" },

@@ -15,7 +15,7 @@ const triggerLabels: Record<string, string> = {
   postback: "Clic bouton",
   quick_reply: "Réponse rapide",
   welcome: "Message de bienvenue",
-  default: "Réponse par défaut",
+  default: "Chatbot IA",
   comment_keyword: "Mot-clé en commentaire",
 };
 

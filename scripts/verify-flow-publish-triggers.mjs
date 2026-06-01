@@ -15,6 +15,7 @@ function assertContains(source, needle, label) {
 
 const publishRoute = read("app/api/v1/flows/[flowId]/publish/route.ts");
 const triggerPanel = read("components/flow-builder/panels/TriggerPanel.tsx");
+const triggerNode = read("components/flow-builder/nodes/trigger-node.tsx");
 const flowCanvas = read("components/flow-builder/flow-canvas.tsx");
 const zernioWebhook = read("lib/zernio-webhook.ts");
 const syncRoute = read("app/api/v1/channels/sync/route.ts");
@@ -36,8 +37,11 @@ assertContains(publishRoute, "invalid_trigger_scope", "publish route");
 assertContains(publishRoute, "ensureZernflowWebhook", "publish route webhook");
 assertContains(publishRoute, "webhook", "publish route webhook response");
 assertContains(triggerPanel, "Canaux: tous les canaux actifs", "trigger panel activation copy");
+assertContains(triggerPanel, "Chatbot IA - tous les messages", "trigger panel ai chatbot trigger");
+assertContains(triggerPanel, "Recommande IA", "trigger panel ai chatbot trigger");
 assertContains(triggerPanel, "Plateformes choisies", "trigger panel platform scope");
 assertContains(triggerPanel, "Comptes précis", "trigger panel channel scope");
+assertContains(triggerNode, "Chatbot IA", "trigger node ai chatbot label");
 assertContains(flowCanvas, "publishMessage", "flow canvas publish feedback");
 assertContains(flowCanvas, "activation", "flow canvas publish feedback");
 assertContains(zernioWebhook, "message.received", "zernio webhook helper");

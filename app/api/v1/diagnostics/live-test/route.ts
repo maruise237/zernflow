@@ -49,11 +49,13 @@ async function getTriggerDiagnostics({
   workspaceId,
   channelId,
   flowId,
+  conversationId,
 }: {
   supabase: ReturnType<typeof createServiceClient> extends Promise<infer T> ? T : never;
   workspaceId: string;
   channelId: string;
   flowId?: string;
+  conversationId?: string;
 }) {
   let candidateQuery = supabase
     .from("triggers")
@@ -74,9 +76,16 @@ async function getTriggerDiagnostics({
     workspaceQuery = workspaceQuery.eq("flow_id", flowId);
   }
 
-  const [{ data: candidateTriggers }, { data: workspaceTriggers }] = await Promise.all([
+  const [{ data: candidateTriggers }, { data: workspaceTriggers }, { count: inboundMessageCount }] = await Promise.all([
     candidateQuery.order("priority", { ascending: false }),
     workspaceQuery.order("created_at", { ascending: false }).limit(40),
+    conversationId
+      ? supabase
+          .from("messages")
+          .select("*", { count: "exact", head: true })
+          .eq("conversation_id", conversationId)
+          .eq("direction", "inbound")
+      : Promise.resolve({ count: null }),
   ]);
 
   const candidates = (candidateTriggers ?? []).map(summarizeTrigger);
@@ -89,6 +98,11 @@ async function getTriggerDiagnostics({
       : "no_active_published_triggers_for_channel";
   } else if (candidates.every((trigger) => trigger.type === "comment_keyword")) {
     reason = "only_comment_triggers_found_for_dm_test";
+  } else if (
+    candidates.every((trigger) => trigger.type === "welcome") &&
+    (inboundMessageCount ?? 0) > 1
+  ) {
+    reason = "welcome_trigger_requires_first_inbound_message";
   } else {
     reason = "candidate_triggers_found_but_no_rule_matched_text";
   }
@@ -97,6 +111,7 @@ async function getTriggerDiagnostics({
     reason,
     candidateCount: candidates.length,
     candidates,
+    inboundMessageCount,
     workspaceTriggerCount: allWorkspaceTriggers.length,
     workspaceTriggers: allWorkspaceTriggers,
   };
@@ -237,6 +252,7 @@ export async function POST(request: NextRequest) {
     workspaceId: membership.workspace_id,
     channelId: channel.id,
     flowId,
+    conversationId: conversation.id,
   });
 
   if (!trigger) {

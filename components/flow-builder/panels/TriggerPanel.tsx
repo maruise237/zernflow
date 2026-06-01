@@ -27,12 +27,12 @@ interface TriggerPanelProps {
   onChange: (data: Record<string, unknown>) => void;
 }
 
-const triggerTypes: Array<{ value: TriggerType; label: string; description: string }> = [
+const triggerTypes: Array<{ value: TriggerType; label: string; description: string; badge?: string }> = [
   { value: "keyword", label: "Mot-clé", description: "Déclenché quand un utilisateur envoie un mot-clé correspondant" },
   { value: "postback", label: "Clic bouton", description: "Déclenché quand un utilisateur clique sur un bouton" },
   { value: "quick_reply", label: "Réponse rapide", description: "Déclenché quand un utilisateur touche une réponse rapide" },
   { value: "welcome", label: "Message de bienvenue", description: "Déclenché quand un utilisateur démarre une conversation" },
-  { value: "default", label: "Réponse par défaut", description: "Déclenché quand aucun autre déclencheur ne correspond" },
+  { value: "default", label: "Chatbot IA - tous les messages", description: "Optimise pour un assistant IA: le flow repond a chaque DM entrant quand aucun trigger plus precis ne correspond", badge: "Recommande IA" },
   { value: "comment_keyword", label: "Mot-clé en commentaire", description: "Déclenché par des mots-clés dans les commentaires de posts" },
 ];
 
@@ -131,13 +131,27 @@ export function TriggerPanel({ data: rawData, channels, onChange }: TriggerPanel
                 className="mt-0.5 h-4 w-4 border-input text-emerald-500 focus:ring-emerald-500"
               />
               <div>
-                <p className="text-sm font-medium text-foreground">{t.label}</p>
+                <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-foreground">
+                  {t.label}
+                  {t.badge && (
+                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                      {t.badge}
+                    </span>
+                  )}
+                </p>
                 <p className="text-xs text-muted-foreground">{t.description}</p>
               </div>
             </label>
           ))}
         </div>
       </div>
+
+      {triggerType === "default" && (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300">
+          Ce mode est celui a utiliser pour un chatbot IA permanent. Il ne demande pas de mot-cle:
+          chaque message entrant peut lancer le flow, sauf si un autre trigger plus specifique passe avant.
+        </div>
+      )}
 
       {/* Activation Scope */}
       <div>

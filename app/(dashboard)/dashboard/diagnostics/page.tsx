@@ -5,11 +5,14 @@ import {
   AlertTriangle,
   CheckCircle2,
   Clock,
+  FileText,
   MessageSquareWarning,
   RadioTower,
 } from "lucide-react";
+import { LiveTestPanel, type LiveTestChannel, type LiveTestConversation } from "./live-test-panel";
 
 type AutomationEvent = Database["public"]["Tables"]["automation_events"]["Row"];
+type AppLog = Database["public"]["Tables"]["app_logs"]["Row"];
 
 const statusStyles: Record<string, string> = {
   success: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300",
@@ -69,7 +72,14 @@ export default async function DiagnosticsPage() {
 
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-  const [{ data: events }, { count: webhookCount }, { count: errorCount }] =
+  const [
+    { data: events },
+    { count: webhookCount },
+    { count: errorCount },
+    { data: appLogs },
+    { data: channels },
+    { data: conversations },
+  ] =
     await Promise.all([
       supabase
         .from("automation_events")
@@ -89,11 +99,40 @@ export default async function DiagnosticsPage() {
         .eq("workspace_id", workspace.id)
         .eq("status", "error")
         .gte("created_at", since),
+      supabase
+        .from("app_logs")
+        .select("*")
+        .eq("workspace_id", workspace.id)
+        .order("created_at", { ascending: false })
+        .limit(80),
+      supabase
+        .from("channels")
+        .select("id, platform, username, display_name")
+        .eq("workspace_id", workspace.id)
+        .eq("is_active", true)
+        .order("platform", { ascending: true }),
+      supabase
+        .from("conversations")
+        .select("id, channel_id, late_conversation_id, last_message_preview, contacts(display_name)")
+        .eq("workspace_id", workspace.id)
+        .not("late_conversation_id", "is", null)
+        .order("last_message_at", { ascending: false })
+        .limit(100),
     ]);
 
   const recentEvents = events ?? [];
   const matchedCount = recentEvents.filter((event) => event.event_type === "trigger_matched").length;
   const skippedCount = countByStatus(recentEvents, "skipped");
+  const liveTestChannels = (channels ?? []) as LiveTestChannel[];
+  const liveTestConversations = ((conversations ?? []) as Array<LiveTestConversation & { contacts?: { display_name?: string | null } | null }>).map(
+    (conversation) => ({
+      id: conversation.id,
+      channel_id: conversation.channel_id,
+      late_conversation_id: conversation.late_conversation_id,
+      last_message_preview: conversation.last_message_preview,
+      contact_name: conversation.contacts?.display_name ?? null,
+    })
+  );
 
   return (
     <div className="flex h-full flex-col">
@@ -107,6 +146,11 @@ export default async function DiagnosticsPage() {
       </div>
 
       <div className="flex-1 overflow-auto px-8 py-6">
+        <LiveTestPanel
+          channels={liveTestChannels}
+          conversations={liveTestConversations}
+        />
+
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
             icon={RadioTower}
@@ -189,7 +233,55 @@ export default async function DiagnosticsPage() {
             </div>
           )}
         </div>
+
+        <AppLogsTable logs={appLogs ?? []} />
       </div>
+    </div>
+  );
+}
+
+function AppLogsTable({ logs }: { logs: AppLog[] }) {
+  return (
+    <div className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
+      <div className="border-b border-border px-5 py-4">
+        <div className="flex items-center gap-2">
+          <FileText className="h-4 w-4 text-muted-foreground" />
+          <h2 className="text-sm font-semibold">App logs temporaires</h2>
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Logs applicatifs ajoutés pour le debug. On pourra les retirer après stabilisation.
+        </p>
+      </div>
+
+      {logs.length === 0 ? (
+        <div className="px-5 py-8 text-sm text-muted-foreground">
+          Aucun log applicatif pour le moment.
+        </div>
+      ) : (
+        <div className="divide-y divide-border">
+          {logs.map((log) => (
+            <div key={log.id} className="grid gap-3 px-5 py-4 lg:grid-cols-[11rem_7rem_9rem_1fr]">
+              <div className="text-xs text-muted-foreground">{formatDate(log.created_at)}</div>
+              <div>
+                <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                  log.level === "error" ? statusStyles.error : statusStyles.info
+                }`}>
+                  {log.level}
+                </span>
+              </div>
+              <div className="text-xs text-muted-foreground">{log.source}</div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium">{log.message}</p>
+                {stringifyMetadata(log.metadata) && (
+                  <p className="mt-2 break-words font-mono text-[11px] text-muted-foreground/80">
+                    {stringifyMetadata(log.metadata)}
+                  </p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

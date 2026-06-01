@@ -957,6 +957,42 @@ export interface Database {
           },
         ];
       };
+      app_logs: {
+        Row: {
+          id: string;
+          workspace_id: string | null;
+          level: string;
+          source: string;
+          message: string;
+          metadata: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id?: string | null;
+          level?: string;
+          source: string;
+          message: string;
+          metadata?: Json;
+          created_at?: string;
+        };
+        Update: {
+          workspace_id?: string | null;
+          level?: string;
+          source?: string;
+          message?: string;
+          metadata?: Json;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "app_logs_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       workspace_invites: {
         Row: {
           id: string;

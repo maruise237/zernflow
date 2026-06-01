@@ -33,7 +33,10 @@ assertContains(webhookRoute, "trigger_not_matched", "webhook route diagnostics")
 assertContains(engine, "flow_started", "flow engine diagnostics");
 assertContains(engine, "node_executed", "flow engine diagnostics");
 assertContains(engine, "flow_completed", "flow engine diagnostics");
+assertContains(engine, "normalizeSendMessages", "send message resilience");
+assertContains(engine, "Send message node skipped because it has no sendable content", "send message resilience");
 assertContains(aiResponse, "ai_response_failed", "AI node diagnostics");
+assertContains(aiResponse, "AI provider returned an empty response", "AI empty response guard");
 assertContains(diagnosticsPage, "Automation Diagnostics", "diagnostics page");
 assertContains(channelsView, "Webhook Zernio", "channels webhook status");
 assertContains(channelsView, "message.received", "channels webhook status");

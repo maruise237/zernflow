@@ -110,7 +110,23 @@ export async function executeAiResponse(
       maxOutputTokens: data.maxTokens ?? 500,
     });
 
-    const text = result.text;
+    const text = result.text.trim();
+    if (!text) {
+      await recordAutomationEvent(supabase, {
+        workspace_id: context.workspaceId,
+        flow_id: context.flowId,
+        trigger_id: context.triggerId || null,
+        channel_id: context.channelId,
+        contact_id: context.contactId,
+        conversation_id: context.conversationId,
+        source: "flow",
+        event_type: "ai_response_failed",
+        status: "error",
+        message: "AI provider returned an empty response",
+        metadata: { model },
+      });
+      return;
+    }
 
     // Send via Zernio REST API (same pattern as executeSendMessage)
     const response = await zernio.messages.sendInboxMessage({

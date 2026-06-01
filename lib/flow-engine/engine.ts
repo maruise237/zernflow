@@ -448,6 +448,23 @@ async function executeSendMessage(
   data: SendMessageNodeData,
   context: FlowExecutionContext
 ) {
+  const messages = normalizeSendMessages(data);
+  if (messages.length === 0) {
+    await recordAutomationEvent(supabase, {
+      workspace_id: context.workspaceId,
+      flow_id: context.flowId,
+      trigger_id: context.triggerId || null,
+      channel_id: context.channelId,
+      contact_id: context.contactId,
+      conversation_id: context.conversationId,
+      source: "flow",
+      event_type: "node_failed",
+      status: "skipped",
+      message: "Send message node skipped because it has no sendable content",
+    });
+    return;
+  }
+
   // Get workspace for API key
   const { data: workspace } = await supabase
     .from("workspaces")
@@ -491,7 +508,7 @@ async function executeSendMessage(
     lateConversationId = conversation.late_conversation_id;
   }
 
-  for (const msg of data.messages) {
+  for (const msg of messages) {
     const adapted = adaptMessage(msg, context.platform!);
     const text = interpolateVariables(adapted.text, context.variables || {});
 
@@ -504,8 +521,11 @@ async function executeSendMessage(
       // Build the API body with rich messaging fields
       const body: Record<string, unknown> = {
         accountId: lateAccountId,
-        message: text,
       };
+
+      if (text.trim()) {
+        body.message = text;
+      }
 
       if (adapted.buttons?.length) {
         body.buttons = adapted.buttons;
@@ -518,6 +538,30 @@ async function executeSendMessage(
       }
       if (adapted.replyMarkup) {
         body.replyMarkup = adapted.replyMarkup;
+      }
+
+      const hasSendableContent =
+        typeof body.message === "string" ||
+        attachments?.length ||
+        adapted.buttons?.length ||
+        adapted.quickReplies?.length ||
+        adapted.template ||
+        adapted.replyMarkup;
+
+      if (!hasSendableContent) {
+        await recordAutomationEvent(supabase, {
+          workspace_id: context.workspaceId,
+          flow_id: context.flowId,
+          trigger_id: context.triggerId || null,
+          channel_id: context.channelId,
+          contact_id: context.contactId,
+          conversation_id: context.conversationId,
+          source: "flow",
+          event_type: "node_failed",
+          status: "skipped",
+          message: "Empty send message item skipped",
+        });
+        continue;
       }
 
       const response = await zernio.messages.sendInboxMessage({
@@ -581,10 +625,46 @@ async function executeSendMessage(
     }
 
     // Small delay between messages
-    if (data.messages.length > 1) {
+    if (messages.length > 1) {
       await new Promise((resolve) => setTimeout(resolve, 500));
     }
   }
+}
+
+function normalizeSendMessages(data: SendMessageNodeData) {
+  const legacyData = data as SendMessageNodeData & {
+    text?: string;
+    imageUrl?: string;
+    buttons?: SendMessageNodeData["messages"][number]["buttons"];
+    quickReplies?: SendMessageNodeData["messages"][number]["quickReplies"];
+    carousel?: SendMessageNodeData["messages"][number]["carousel"];
+  };
+
+  const rawMessages = Array.isArray(data.messages)
+    ? data.messages
+    : legacyData.text ||
+        legacyData.imageUrl ||
+        legacyData.buttons?.length ||
+        legacyData.quickReplies?.length ||
+        legacyData.carousel
+      ? [{
+          text: legacyData.text,
+          imageUrl: legacyData.imageUrl,
+          buttons: legacyData.buttons,
+          quickReplies: legacyData.quickReplies,
+          carousel: legacyData.carousel,
+        }]
+      : [];
+
+  return rawMessages.filter((message) => {
+    if (!message || typeof message !== "object") return false;
+    if (message.text?.trim()) return true;
+    if (message.imageUrl?.trim()) return true;
+    if (message.buttons?.length) return true;
+    if (message.quickReplies?.length) return true;
+    if (message.carousel?.elements?.length) return true;
+    return false;
+  });
 }
 
 async function executeCondition(

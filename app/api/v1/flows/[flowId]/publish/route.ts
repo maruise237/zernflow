@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import type { Database, Json, TriggerType } from "@/lib/types/database";
+import type { Database, Json, Platform, TriggerType } from "@/lib/types/database";
 
 type FlowNode = {
   id: string;
@@ -9,15 +9,26 @@ type FlowNode = {
     triggerType?: TriggerType;
     keywords?: Array<string | { value: string; matchType?: string }>;
     payload?: string;
+    activationScope?: "all" | "platforms" | "channels";
+    platforms?: Platform[];
+    channelIds?: string[];
     [key: string]: unknown;
   };
 };
+
+type ActiveChannel = Pick<
+  Database["public"]["Tables"]["channels"]["Row"],
+  "id" | "platform"
+>;
 
 function buildTriggerConfig(node: FlowNode): Json {
   const data = node.data || {};
   const baseConfig = {
     source: "flow_builder",
     nodeId: node.id,
+    activationScope: data.activationScope || "all",
+    platforms: data.platforms || [],
+    channelIds: data.channelIds || [],
   };
 
   if (data.triggerType === "postback" || data.triggerType === "quick_reply") {
@@ -34,12 +45,14 @@ function buildTriggerConfig(node: FlowNode): Json {
 async function syncFlowTriggers({
   supabase,
   flowId,
+  workspaceId,
   nodes,
 }: {
   supabase: Awaited<ReturnType<typeof createClient>>;
   flowId: string;
+  workspaceId: string;
   nodes: Json;
-}) {
+}): Promise<number> {
   const flowNodes = Array.isArray(nodes) ? (nodes as unknown as FlowNode[]) : [];
   const triggerNodes = flowNodes.filter((node) => node.type === "trigger");
 
@@ -64,20 +77,67 @@ async function syncFlowTriggers({
     await supabase.from("triggers").delete().in("id", builderTriggerIds);
   }
 
-  if (triggerNodes.length === 0) return;
+  if (triggerNodes.length === 0) return 0;
 
-  const inserts: Database["public"]["Tables"]["triggers"]["Insert"][] =
-    triggerNodes.map((node, index) => ({
-      flow_id: flowId,
-      channel_id: null,
-      type: node.data?.triggerType || "keyword",
-      config: buildTriggerConfig(node),
-      priority: 100 - index,
-      is_active: true,
-    }));
+  const { data: activeChannels } = await supabase
+    .from("channels")
+    .select("id, platform")
+    .eq("workspace_id", workspaceId)
+    .eq("is_active", true);
+
+  const inserts = triggerNodes.flatMap((node, index) =>
+    buildTriggerInserts({
+      flowId,
+      node,
+      index,
+      activeChannels: activeChannels ?? [],
+    })
+  );
+
+  if (inserts.length === 0) return 0;
 
   const { error } = await supabase.from("triggers").insert(inserts);
   if (error) throw new Error(error.message);
+  return inserts.length;
+}
+
+function buildTriggerInserts({
+  flowId,
+  node,
+  index,
+  activeChannels,
+}: {
+  flowId: string;
+  node: FlowNode;
+  index: number;
+  activeChannels: ActiveChannel[];
+}): Database["public"]["Tables"]["triggers"]["Insert"][] {
+  const scope = node.data?.activationScope || "all";
+  const baseInsert = {
+    flow_id: flowId,
+    type: node.data?.triggerType || "keyword",
+    config: buildTriggerConfig(node),
+    priority: 100 - index,
+    is_active: true,
+  };
+
+  if (scope === "all") {
+    return [{ ...baseInsert, channel_id: null }];
+  }
+
+  const selectedChannels =
+    scope === "platforms"
+      ? activeChannels.filter((channel) =>
+          (node.data?.platforms || []).includes(channel.platform)
+        )
+      : activeChannels.filter((channel) =>
+          (node.data?.channelIds || []).includes(channel.id)
+        );
+
+  return selectedChannels.map((channel) => ({
+    ...baseInsert,
+    channel_id: channel.id,
+  }));
 }
 
 export async function POST(
@@ -128,7 +188,12 @@ export async function POST(
     })
     .eq("id", flowId);
 
-  await syncFlowTriggers({ supabase, flowId, nodes: flow.nodes });
+  const triggerCount = await syncFlowTriggers({
+    supabase,
+    flowId,
+    workspaceId: membership.workspace_id,
+    nodes: flow.nodes,
+  });
 
   // Save version snapshot
   await supabase.from("flow_versions").insert({
@@ -140,10 +205,6 @@ export async function POST(
     name: flow.name,
     published_by: user.id,
   });
-
-  const triggerCount = Array.isArray(flow.nodes)
-    ? (flow.nodes as unknown as FlowNode[]).filter((node) => node.type === "trigger").length
-    : 0;
 
   return NextResponse.json({ ...flow, version: newVersion, triggerCount });
 }

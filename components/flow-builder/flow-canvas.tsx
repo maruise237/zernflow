@@ -22,7 +22,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Save, Rocket, Loader2, History, Play, Trash2, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
-import type { Database, FlowStatus, Json } from "@/lib/types/database";
+import type { Database, FlowStatus, Json, Platform } from "@/lib/types/database";
 
 import { NodePalette } from "./node-palette";
 import { TriggerNode } from "./nodes/trigger-node";
@@ -36,6 +36,13 @@ import { VersionHistoryPanel } from "./panels/VersionHistoryPanel";
 import { TestPanel } from "./panels/TestPanel";
 
 type Flow = Database["public"]["Tables"]["flows"]["Row"];
+export interface FlowChannelOption {
+  id: string;
+  platform: Platform;
+  username: string | null;
+  display_name: string | null;
+  is_active: boolean;
+}
 
 const nodeTypes: NodeTypes = {
   trigger: TriggerNode,
@@ -48,6 +55,7 @@ const nodeTypes: NodeTypes = {
 
 interface FlowCanvasProps {
   flow: Flow;
+  channels: FlowChannelOption[];
 }
 
 let nodeId = 0;
@@ -58,7 +66,7 @@ function getNodeId() {
 function getDefaultData(type: string, actionType?: string): Record<string, unknown> {
   switch (type) {
     case "trigger":
-      return { triggerType: "keyword", keywords: [] };
+      return { triggerType: "keyword", activationScope: "all", keywords: [] };
     case "sendMessage":
       return { messages: [] };
     case "condition":
@@ -74,7 +82,7 @@ function getDefaultData(type: string, actionType?: string): Record<string, unkno
   }
 }
 
-function FlowCanvasInner({ flow }: FlowCanvasProps) {
+function FlowCanvasInner({ flow, channels }: FlowCanvasProps) {
   const router = useRouter();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition } = useReactFlow();
@@ -286,7 +294,7 @@ function FlowCanvasInner({ flow }: FlowCanvasProps) {
       const triggerCount = Number(data.triggerCount ?? 0);
       setPublishMessage(
         triggerCount > 0
-          ? `Publié: ${triggerCount} déclencheur${triggerCount === 1 ? "" : "s"} actif${triggerCount === 1 ? "" : "s"} sur tous les canaux actifs.`
+          ? `Publié: ${triggerCount} activation${triggerCount === 1 ? "" : "s"} réelle${triggerCount === 1 ? "" : "s"} créée${triggerCount === 1 ? "" : "s"}.`
           : "Publié, mais aucun déclencheur n'est configuré."
       );
       setTimeout(() => setPublishMessage(null), 6000);
@@ -505,6 +513,7 @@ function FlowCanvasInner({ flow }: FlowCanvasProps) {
         {selectedNode && !versionPanelOpen && !testPanelOpen && (
           <NodeConfigSidebar
             node={selectedNode}
+            channels={channels}
             onChange={onNodeDataChange}
             onClose={closeSidebar}
             onDelete={deleteNode}
@@ -535,10 +544,10 @@ function FlowCanvasInner({ flow }: FlowCanvasProps) {
   );
 }
 
-export function FlowCanvas({ flow }: FlowCanvasProps) {
+export function FlowCanvas({ flow, channels }: FlowCanvasProps) {
   return (
     <ReactFlowProvider>
-      <FlowCanvasInner flow={flow} />
+      <FlowCanvasInner flow={flow} channels={channels} />
     </ReactFlowProvider>
   );
 }

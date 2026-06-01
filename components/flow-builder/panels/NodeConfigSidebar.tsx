@@ -11,12 +11,14 @@ import { ConditionPanel } from "./ConditionPanel";
 import { DelayPanel } from "./DelayPanel";
 import { ActionPanel } from "./ActionPanel";
 import { AiResponsePanel } from "./AiResponsePanel";
+import type { FlowChannelOption } from "../flow-canvas";
 
 interface NodeConfigSidebarProps {
   node: Node;
   onChange: (nodeId: string, data: Record<string, unknown>) => void;
   onClose: () => void;
   onDelete: (nodeId: string) => void;
+  channels: FlowChannelOption[];
 }
 
 const nodeTypeConfig: Record<string, { label: string; icon: typeof Cog; color: string; borderColor: string }> = {
@@ -58,7 +60,7 @@ const nodeTypeConfig: Record<string, { label: string; icon: typeof Cog; color: s
   },
 };
 
-export function NodeConfigSidebar({ node, onChange, onClose, onDelete }: NodeConfigSidebarProps) {
+export function NodeConfigSidebar({ node, onChange, onClose, onDelete, channels }: NodeConfigSidebarProps) {
   const nodeType = node.type || "action";
   const config = nodeTypeConfig[nodeType] || nodeTypeConfig.action;
   const Icon = config.icon;
@@ -92,7 +94,7 @@ export function NodeConfigSidebar({ node, onChange, onClose, onDelete }: NodeCon
     const data = node.data as Record<string, unknown>;
     switch (nodeType) {
       case "trigger":
-        return <TriggerPanel data={data} onChange={handleChange} />;
+        return <TriggerPanel data={data} channels={channels} onChange={handleChange} />;
       case "sendMessage":
         return <SendMessagePanel data={data} onChange={handleChange} />;
       case "condition":

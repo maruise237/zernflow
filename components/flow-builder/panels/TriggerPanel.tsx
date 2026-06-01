@@ -3,7 +3,8 @@
 import { useCallback, useState } from "react";
 import { Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { TriggerType } from "@/lib/types/database";
+import type { Platform, TriggerType } from "@/lib/types/database";
+import type { FlowChannelOption } from "../flow-canvas";
 
 interface Keyword {
   value: string;
@@ -14,11 +15,15 @@ interface TriggerPanelData {
   triggerType?: string;
   keywords?: Keyword[];
   payload?: string;
+  activationScope?: "all" | "platforms" | "channels";
+  platforms?: Platform[];
+  channelIds?: string[];
   [key: string]: unknown;
 }
 
 interface TriggerPanelProps {
   data: Record<string, unknown>;
+  channels: FlowChannelOption[];
   onChange: (data: Record<string, unknown>) => void;
 }
 
@@ -37,12 +42,16 @@ const matchTypes: Array<{ value: "exact" | "contains" | "startsWith"; label: str
   { value: "startsWith", label: "Commence par" },
 ];
 
-export function TriggerPanel({ data: rawData, onChange }: TriggerPanelProps) {
+export function TriggerPanel({ data: rawData, channels, onChange }: TriggerPanelProps) {
   const data = rawData as TriggerPanelData;
   const triggerType = data.triggerType || "keyword";
   const keywords = data.keywords || [];
+  const activationScope = data.activationScope || "all";
+  const selectedPlatforms = data.platforms || [];
+  const selectedChannelIds = data.channelIds || [];
   const [newKeyword, setNewKeyword] = useState("");
   const [newMatchType, setNewMatchType] = useState<"exact" | "contains" | "startsWith">("contains");
+  const platformOptions = Array.from(new Set(channels.map((channel) => channel.platform)));
 
   const handleTriggerTypeChange = useCallback(
     (type: string) => {
@@ -78,6 +87,20 @@ export function TriggerPanel({ data: rawData, onChange }: TriggerPanelProps) {
   const showKeywords = triggerType === "keyword" || triggerType === "comment_keyword";
   const showPayload = triggerType === "postback" || triggerType === "quick_reply";
 
+  function togglePlatform(platform: Platform) {
+    const next = selectedPlatforms.includes(platform)
+      ? selectedPlatforms.filter((p) => p !== platform)
+      : [...selectedPlatforms, platform];
+    onChange({ ...data, platforms: next });
+  }
+
+  function toggleChannel(channelId: string) {
+    const next = selectedChannelIds.includes(channelId)
+      ? selectedChannelIds.filter((id) => id !== channelId)
+      : [...selectedChannelIds, channelId];
+    onChange({ ...data, channelIds: next });
+  }
+
   return (
     <div className="space-y-5">
       {/* Trigger Type */}
@@ -86,7 +109,7 @@ export function TriggerPanel({ data: rawData, onChange }: TriggerPanelProps) {
           Type de déclencheur
         </label>
         <div className="mb-3 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-800 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-300">
-          Canaux: tous les canaux actifs. Après publication, ce déclencheur est actif sur chaque plateforme connectée qui supporte ce type d'événement.
+          Canaux: tous les canaux actifs par défaut. Vous pouvez limiter ce déclencheur à certaines plateformes ou comptes.
         </div>
         <div className="space-y-1.5">
           {triggerTypes.map((t) => (
@@ -114,6 +137,109 @@ export function TriggerPanel({ data: rawData, onChange }: TriggerPanelProps) {
             </label>
           ))}
         </div>
+      </div>
+
+      {/* Activation Scope */}
+      <div>
+        <label className="mb-2 block text-xs font-semibold text-foreground">
+          Activation réelle
+        </label>
+        <div className="grid gap-2">
+          {[
+            { value: "all", label: "Tous les canaux actifs", description: "Le flow réagit partout où le type d'événement est supporté." },
+            { value: "platforms", label: "Plateformes choisies", description: "Le flow réagit sur tous les comptes actifs des plateformes sélectionnées." },
+            { value: "channels", label: "Comptes précis", description: "Le flow réagit seulement sur les comptes sélectionnés." },
+          ].map((scope) => (
+            <label
+              key={scope.value}
+              className={cn(
+                "flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors",
+                activationScope === scope.value
+                  ? "border-blue-500 bg-blue-50 dark:bg-blue-950"
+                  : "border-border bg-card hover:border-input"
+              )}
+            >
+              <input
+                type="radio"
+                name="activationScope"
+                value={scope.value}
+                checked={activationScope === scope.value}
+                onChange={() =>
+                  onChange({
+                    ...data,
+                    activationScope: scope.value,
+                    ...(scope.value === "all" ? { platforms: [], channelIds: [] } : {}),
+                  })
+                }
+                className="mt-0.5 h-4 w-4 border-input text-blue-500 focus:ring-blue-500"
+              />
+              <div>
+                <p className="text-sm font-medium text-foreground">{scope.label}</p>
+                <p className="text-xs text-muted-foreground">{scope.description}</p>
+              </div>
+            </label>
+          ))}
+        </div>
+
+        {activationScope === "platforms" && (
+          <div className="mt-3 rounded-lg border border-border bg-card p-3">
+            {platformOptions.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                Aucun canal actif. Connectez et synchronisez vos canaux avant de cibler une plateforme.
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {platformOptions.map((platform) => (
+                  <button
+                    key={platform}
+                    type="button"
+                    onClick={() => togglePlatform(platform)}
+                    className={cn(
+                      "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+                      selectedPlatforms.includes(platform)
+                        ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
+                        : "border-border text-muted-foreground hover:border-input"
+                    )}
+                  >
+                    {platform}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activationScope === "channels" && (
+          <div className="mt-3 space-y-2 rounded-lg border border-border bg-card p-3">
+            {channels.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                Aucun compte actif. Connectez et synchronisez vos canaux avant de cibler un compte.
+              </p>
+            ) : (
+              channels.map((channel) => (
+                <label
+                  key={channel.id}
+                  className="flex cursor-pointer items-center justify-between gap-3 rounded-md px-2 py-1.5 hover:bg-muted"
+                >
+                  <span className="min-w-0 text-sm">
+                    <span className="block truncate">
+                      {channel.display_name || channel.username || channel.platform}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {channel.platform}{channel.username ? ` · @${channel.username}` : ""}
+                    </span>
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={selectedChannelIds.includes(channel.id)}
+                    onChange={() => toggleChannel(channel.id)}
+                    className="h-4 w-4 rounded border-input text-blue-500 focus:ring-blue-500"
+                  />
+                </label>
+              ))
+            )}
+          </div>
+        )}
       </div>
 
       {/* Keywords Section */}

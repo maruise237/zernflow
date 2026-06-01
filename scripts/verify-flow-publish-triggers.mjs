@@ -24,8 +24,14 @@ assertContains(publishRoute, "channel_id: null", "publish route");
 assertContains(publishRoute, "comment_keyword", "publish route");
 assertContains(publishRoute, "source: \"flow_builder\"", "publish route");
 assertContains(publishRoute, "triggerCount", "publish route");
+assertContains(publishRoute, "activationScope", "publish route");
+assertContains(publishRoute, "activeChannels", "publish route");
+assertContains(publishRoute, "platforms", "publish route");
+assertContains(publishRoute, "channelIds", "publish route");
 assertContains(triggerPanel, "Canaux: tous les canaux actifs", "trigger panel activation copy");
+assertContains(triggerPanel, "Plateformes choisies", "trigger panel platform scope");
+assertContains(triggerPanel, "Comptes précis", "trigger panel channel scope");
 assertContains(flowCanvas, "publishMessage", "flow canvas publish feedback");
-assertContains(flowCanvas, "tous les canaux actifs", "flow canvas publish feedback");
+assertContains(flowCanvas, "activation", "flow canvas publish feedback");
 
 console.log("flow publish trigger verification passed");

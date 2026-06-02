@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build",
-    "start": "node .next/standalone/server.js",
+    "start": "node scripts/start-standalone.mjs",
     "cron:jobs": "node scripts/run-cron.mjs jobs",
     "cron:sequences": "node scripts/run-cron.mjs sequences",
     "lint": "eslint ."

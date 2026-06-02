@@ -90,15 +90,20 @@ export function WorkspaceSwitcher({
     <div ref={dropdownRef} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-sidebar-accent transition-colors"
+        className="flex min-h-12 w-full cursor-pointer items-center gap-3 rounded-xl border border-sidebar-border bg-card/70 px-2.5 py-2 text-left shadow-sm shadow-black/5 transition-colors duration-200 hover:bg-sidebar-accent"
       >
         <img
           src={avatarUrl(current.id)}
           alt=""
-          className="h-7 w-7 rounded-md"
+          className="h-8 w-8 rounded-lg"
         />
-        <span className="flex-1 truncate text-sm font-semibold text-sidebar-foreground">
-          {current.name}
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-semibold text-sidebar-foreground">
+            {current.name}
+          </span>
+          <span className="block truncate text-[11px] font-medium text-sidebar-foreground/48">
+            Workspace
+          </span>
         </span>
         <ChevronDown
           className={cn(
@@ -109,7 +114,7 @@ export function WorkspaceSwitcher({
       </button>
 
       {open && (
-        <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-lg border border-border bg-popover p-1 shadow-lg">
+        <div className="absolute left-0 right-0 top-full z-50 mt-2 rounded-xl border border-border bg-popover p-1.5 shadow-xl shadow-black/10">
           {/* Workspace list */}
           {workspaces.map((ws) => {
             const isActive = ws.id === current.id;
@@ -120,7 +125,7 @@ export function WorkspaceSwitcher({
                 onClick={() => handleSwitch(ws.id)}
                 disabled={!!switching}
                 className={cn(
-                  "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
+                  "flex min-h-10 w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60",
                   isActive
                     ? "bg-accent text-accent-foreground"
                     : "text-popover-foreground hover:bg-accent"
@@ -153,14 +158,14 @@ export function WorkspaceSwitcher({
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder="Nom de l'espace de travail"
-                className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-ring"
+                className="min-h-10 w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
                 disabled={switching === "new"}
               />
               <div className="mt-1.5 flex gap-1.5">
                 <button
                   type="submit"
                   disabled={!newName.trim() || switching === "new"}
-                  className="flex-1 rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground disabled:opacity-50"
+                  className="min-h-9 flex-1 cursor-pointer rounded-lg bg-primary px-2 py-1 text-xs font-medium text-primary-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {switching === "new" ? (
                     <Loader2 className="mx-auto h-3.5 w-3.5 animate-spin" />
@@ -174,7 +179,7 @@ export function WorkspaceSwitcher({
                     setCreating(false);
                     setNewName("");
                   }}
-                  className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-accent"
+                  className="min-h-9 cursor-pointer rounded-lg px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                 >
                   Annuler
                 </button>
@@ -183,7 +188,7 @@ export function WorkspaceSwitcher({
           ) : (
             <button
               onClick={() => setCreating(true)}
-              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+              className="flex min-h-10 w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-muted-foreground transition-colors duration-200 hover:bg-secondary hover:text-foreground"
             >
               <Plus className="h-3.5 w-3.5" />
               Créer un espace de travail

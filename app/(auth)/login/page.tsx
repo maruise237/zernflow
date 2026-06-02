@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Github, LockKeyhole, Sparkles } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -44,93 +45,119 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <div className="w-full max-w-sm space-y-6">
-        <div className="text-center">
-          <Image src="/logo.png" alt="ZernFlow" width={48} height={48} className="mx-auto mb-3" />
-          <h1 className="text-2xl font-bold">Bon retour</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Connectez-vous à votre compte
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium mb-1.5"
-            >
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-              placeholder="you@example.com"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium mb-1.5"
-            >
-              Mot de passe
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-              placeholder="Votre mot de passe"
-            />
-          </div>
-
-          {error && (
-            <p className="text-sm text-destructive">{error}</p>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
-          >
-            {loading ? "Connexion..." : "Se connecter"}
-          </button>
-        </form>
-
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-border" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">
-              Ou continuer avec
-            </span>
-          </div>
-        </div>
-
-        <button
-          onClick={handleGitHubLogin}
-          className="flex w-full items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium hover:bg-accent"
-        >
-          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-          </svg>
-          GitHub
-        </button>
-
-        <p className="text-center text-sm text-muted-foreground">
-          Vous n'avez pas de compte ?{" "}
-          <Link href="/register" className="font-medium text-foreground hover:underline">
-            Créer un compte
+    <div className="flex min-h-screen items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(212,175,55,0.16),transparent_34rem),linear-gradient(135deg,#fffdf8_0%,#f4f2ec_55%,#ece8dd_100%)] px-4 py-10 dark:bg-[radial-gradient(circle_at_top_left,rgba(212,175,55,0.14),transparent_32rem),linear-gradient(135deg,#171717_0%,#101010_100%)]">
+      <div className="grid w-full max-w-5xl overflow-hidden rounded-2xl border border-border bg-card/85 shadow-2xl shadow-black/10 backdrop-blur-xl lg:grid-cols-[1.05fr_0.95fr]">
+        <aside className="hidden border-r border-white/10 bg-primary p-10 text-primary-foreground lg:flex lg:flex-col lg:justify-between">
+          <Link href="/" className="flex items-center gap-3">
+            <Image src="/logo.png" alt="ZernFlow" width={36} height={36} className="rounded-xl" />
+            <span className="text-lg font-semibold">ZernFlow</span>
           </Link>
-        </p>
+
+          <div className="space-y-6">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-medium text-white/78">
+              <Sparkles className="h-3.5 w-3.5" />
+              Automatisation sociale open source
+            </div>
+            <div>
+              <h2 className="max-w-sm text-3xl font-semibold tracking-tight">
+                Reprenez vos conversations au même endroit.
+              </h2>
+              <p className="mt-4 max-w-sm text-sm leading-6 text-white/68">
+                Connectez vos canaux, automatisez les réponses simples et gardez la main sur les échanges importants.
+              </p>
+            </div>
+          </div>
+
+          <p className="text-xs leading-5 text-white/45">
+            MIT, auto-hébergeable et pensé pour les équipes qui veulent rester propriétaires de leurs données.
+          </p>
+        </aside>
+
+        <main className="w-full p-6 sm:p-10">
+          <div className="mx-auto w-full max-w-sm space-y-6">
+            <div className="text-center">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-secondary shadow-sm">
+                <LockKeyhole className="h-6 w-6 text-foreground" />
+              </div>
+              <h1 className="text-2xl font-semibold tracking-tight">Bon retour</h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Connectez-vous à votre compte
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="email" className="mb-1.5 block text-sm font-medium">
+                  Email
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="min-h-11 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none transition-colors focus:ring-2 focus:ring-ring"
+                  placeholder="you@example.com"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="password" className="mb-1.5 block text-sm font-medium">
+                  Mot de passe
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="min-h-11 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none transition-colors focus:ring-2 focus:ring-ring"
+                  placeholder="Votre mot de passe"
+                />
+              </div>
+
+              {error && (
+                <p role="alert" className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  {error}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="min-h-11 w-full cursor-pointer rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-sm shadow-black/10 transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {loading ? "Connexion..." : "Se connecter"}
+              </button>
+            </form>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">
+                  Ou continuer avec
+                </span>
+              </div>
+            </div>
+
+            <button
+              onClick={handleGitHubLogin}
+              className="flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium transition-colors hover:bg-secondary"
+            >
+              <Github className="h-4 w-4" />
+              GitHub
+            </button>
+
+            <p className="text-center text-sm text-muted-foreground">
+              Vous n'avez pas de compte ?{" "}
+              <Link href="/register" className="font-medium text-foreground hover:underline">
+                Créer un compte
+              </Link>
+            </p>
+          </div>
+        </main>
       </div>
     </div>
   );

@@ -85,30 +85,30 @@ export function Sidebar({
 
   return (
     <>
-    <aside className="hidden h-full w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar/90 shadow-sm shadow-black/5 backdrop-blur-xl md:flex">
-      <div className="border-b border-sidebar-border px-4 py-4">
+    <aside className="hidden h-dvh w-64 shrink-0 flex-col overflow-hidden border-r border-sidebar-border bg-sidebar/95 shadow-sm shadow-black/5 backdrop-blur-xl md:flex">
+      <div className="shrink-0 border-b border-sidebar-border px-3 py-3">
         <WorkspaceSwitcher current={workspace} workspaces={workspaces} />
       </div>
 
-      <nav className="flex-1 space-y-1.5 p-4">
+      <nav className="min-h-0 flex-1 space-y-0.5 overflow-y-auto overscroll-contain px-3 py-3">
         {navItems.map((item) => {
           return (
             <Link
               key={item.name}
               href={item.href}
               className={cn(
-                "group flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200",
+                "group flex min-h-9 items-center gap-3 rounded-xl px-3 py-1.5 text-sm font-semibold transition-all duration-200",
                 item.isActive
-                  ? "bg-primary text-primary-foreground shadow-sm shadow-black/10"
-                  : "text-sidebar-foreground/68 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  ? "bg-primary text-primary-foreground shadow-sm shadow-blue-950/20"
+                  : "text-sidebar-foreground/78 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               )}
             >
               <span
                 className={cn(
                   "flex h-7 w-7 items-center justify-center rounded-lg transition-colors",
                   item.isActive
-                    ? "bg-white/12 text-primary-foreground"
-                    : "bg-sidebar-accent text-sidebar-foreground/62 group-hover:text-sidebar-accent-foreground"
+                    ? "bg-white/15 text-primary-foreground"
+                    : "bg-sidebar-accent text-sidebar-foreground/74 group-hover:text-sidebar-accent-foreground"
                 )}
               >
                 <item.icon className="h-4 w-4" />
@@ -119,17 +119,17 @@ export function Sidebar({
         })}
       </nav>
 
-      <div className="space-y-1.5 border-t border-sidebar-border p-4">
+      <div className="shrink-0 space-y-0.5 border-t border-sidebar-border p-3">
         <button
           onClick={toggleTheme}
-          className="flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-sidebar-foreground/70 transition-colors duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          className="flex min-h-9 w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-1.5 text-sm font-semibold text-sidebar-foreground/78 transition-colors duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
         >
           {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           {dark ? t("LightMode") : t("DarkMode")}
         </button>
         <button
           onClick={handleSignOut}
-          className="flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-sidebar-foreground/70 transition-colors duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          className="flex min-h-9 w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-1.5 text-sm font-semibold text-sidebar-foreground/78 transition-colors duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
         >
           <LogOut className="h-4 w-4" />
           {t("SignOut")}

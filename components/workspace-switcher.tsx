@@ -90,7 +90,7 @@ export function WorkspaceSwitcher({
     <div ref={dropdownRef} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex min-h-12 w-full cursor-pointer items-center gap-3 rounded-xl border border-sidebar-border bg-card/70 px-2.5 py-2 text-left shadow-sm shadow-black/5 transition-colors duration-200 hover:bg-sidebar-accent"
+        className="flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-xl border border-sidebar-border bg-card/80 px-2.5 py-1.5 text-left shadow-sm shadow-black/5 transition-colors duration-200 hover:bg-sidebar-accent"
       >
         <img
           src={avatarUrl(current.id)}
@@ -101,7 +101,7 @@ export function WorkspaceSwitcher({
           <span className="block truncate text-sm font-semibold text-sidebar-foreground">
             {current.name}
           </span>
-          <span className="block truncate text-[11px] font-medium text-sidebar-foreground/48">
+          <span className="block truncate text-[11px] font-semibold text-sidebar-foreground/65">
             Workspace
           </span>
         </span>

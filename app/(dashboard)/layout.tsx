@@ -1,4 +1,5 @@
 import { getWorkspace } from "@/lib/workspace";
+import { GlobalLogCapture } from "@/components/global-log-capture";
 import { Sidebar } from "@/components/sidebar";
 
 export default async function DashboardLayout({
@@ -23,6 +24,7 @@ export default async function DashboardLayout({
   return (
     <div className="dashboard-shell flex h-dvh overflow-hidden">
       <Sidebar workspace={workspace} user={user} workspaces={workspaces} />
+      <GlobalLogCapture />
       <main id="main-content" className="min-h-0 min-w-0 flex-1 overflow-hidden pb-20 md:pb-0">
         {children}
       </main>

@@ -160,6 +160,30 @@ export function LiveLogsConsole({
   useEffect(() => {
     const supabase = createClient();
 
+    const refreshFromServer = async () => {
+      if (pausedRef.current) return;
+
+      const response = await fetch(`/api/v1/logs?workspaceId=${workspaceId}&limit=160`, {
+        cache: "no-store",
+      });
+      if (!response.ok) return;
+
+      const data = (await response.json()) as {
+        events?: AutomationEvent[];
+        appLogs?: AppLog[];
+      };
+
+      setItems((current) =>
+        sortItems(
+          uniqueItems([
+            ...((data.events ?? []) as AutomationEvent[]).map(toStreamItem),
+            ...((data.appLogs ?? []) as AppLog[]).map(toAppStreamItem),
+            ...current,
+          ])
+        ).slice(0, 240)
+      );
+    };
+
     const appendItem = (item: StreamItem) => {
       if (pausedRef.current) return;
       setItems((current) => sortItems(uniqueItems([item, ...current])).slice(0, 240));
@@ -189,34 +213,9 @@ export function LiveLogsConsole({
       )
       .subscribe((status) => setConnected(status === "SUBSCRIBED"));
 
-    const poll = window.setInterval(async () => {
-      if (pausedRef.current) return;
+    refreshFromServer();
 
-      const [events, logs] = await Promise.all([
-        supabase
-          .from("automation_events")
-          .select("*")
-          .eq("workspace_id", workspaceId)
-          .order("created_at", { ascending: false })
-          .limit(80),
-        supabase
-          .from("app_logs")
-          .select("*")
-          .eq("workspace_id", workspaceId)
-          .order("created_at", { ascending: false })
-          .limit(80),
-      ]);
-
-      setItems((current) =>
-        sortItems(
-          uniqueItems([
-            ...((events.data ?? []) as AutomationEvent[]).map(toStreamItem),
-            ...((logs.data ?? []) as AppLog[]).map(toAppStreamItem),
-            ...current,
-          ])
-        ).slice(0, 240)
-      );
-    }, 12_000);
+    const poll = window.setInterval(refreshFromServer, 4_000);
 
     return () => {
       window.clearInterval(poll);
@@ -359,7 +358,7 @@ export function LiveLogsConsole({
       <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
         <div className="flex items-center justify-between border-b border-border px-5 py-3">
           <p className="text-sm font-semibold">{filtered.length} logs visibles</p>
-          <p className="text-xs text-muted-foreground">Auto-refresh 12s + realtime Supabase</p>
+          <p className="text-xs text-muted-foreground">Auto-refresh 4s + realtime Supabase</p>
         </div>
 
         {filtered.length === 0 ? (

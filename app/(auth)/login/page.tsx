@@ -45,8 +45,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(212,175,55,0.16),transparent_34rem),linear-gradient(135deg,#fffdf8_0%,#f4f2ec_55%,#ece8dd_100%)] px-4 py-10 dark:bg-[radial-gradient(circle_at_top_left,rgba(212,175,55,0.14),transparent_32rem),linear-gradient(135deg,#171717_0%,#101010_100%)]">
-      <div className="grid w-full max-w-5xl overflow-hidden rounded-2xl border border-border bg-card/85 shadow-2xl shadow-black/10 backdrop-blur-xl lg:grid-cols-[1.05fr_0.95fr]">
+    <div className="flex min-h-screen items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.16),transparent_34rem),linear-gradient(135deg,#f8fbff_0%,#eef4ff_55%,#ffffff_100%)] px-4 py-10 dark:bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.16),transparent_32rem),linear-gradient(135deg,#111827_0%,#0f172a_100%)]">
+      <div className="grid w-full max-w-5xl overflow-hidden rounded-2xl border border-border bg-card/90 shadow-2xl shadow-blue-950/10 backdrop-blur-xl lg:grid-cols-[1.05fr_0.95fr]">
         <aside className="hidden border-r border-white/10 bg-primary p-10 text-primary-foreground lg:flex lg:flex-col lg:justify-between">
           <Link href="/" className="flex items-center gap-3">
             <Image src="/logo.png" alt="ZernFlow" width={36} height={36} className="rounded-xl" />
@@ -62,13 +62,13 @@ export default function LoginPage() {
               <h2 className="max-w-sm text-3xl font-semibold tracking-tight">
                 Reprenez vos conversations au même endroit.
               </h2>
-              <p className="mt-4 max-w-sm text-sm leading-6 text-white/68">
+              <p className="mt-4 max-w-sm text-sm leading-6 text-white/70">
                 Connectez vos canaux, automatisez les réponses simples et gardez la main sur les échanges importants.
               </p>
             </div>
           </div>
 
-          <p className="text-xs leading-5 text-white/45">
+          <p className="text-xs leading-5 text-white/50">
             MIT, auto-hébergeable et pensé pour les équipes qui veulent rester propriétaires de leurs données.
           </p>
         </aside>

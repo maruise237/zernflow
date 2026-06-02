@@ -13,8 +13,6 @@ import {
   TrendingUp,
   Send,
   Eye,
-  CheckCircle2,
-  AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -63,13 +61,14 @@ const platformLabels: Record<Platform, string> = {
 };
 
 export function GrowthView({
+  workspaceId,
   channels,
   triggers: initialTriggers,
   flows,
   stats,
   recentLogs,
-  loadErrors = [],
 }: {
+  workspaceId: string;
   channels: Channel[];
   triggers: TriggerWithFlow[];
   flows: Array<{ id: string; name: string }>;
@@ -79,7 +78,6 @@ export function GrowthView({
     dmsSent: number;
   };
   recentLogs: CommentLog[];
-  loadErrors?: string[];
 }) {
   const [triggers, setTriggers] = useState(initialTriggers);
   const [showCreate, setShowCreate] = useState(false);
@@ -212,7 +210,7 @@ export function GrowthView({
   }
 
   function handleStartEdit(trigger: TriggerWithFlow) {
-    const config = safeTriggerConfig(trigger.config);
+    const config = trigger.config as unknown as TriggerConfig;
     setEditingId(trigger.id);
     setShowCreate(false);
     setForm({
@@ -327,28 +325,6 @@ export function GrowthView({
       </div>
 
       <div className="flex-1 overflow-auto p-8">
-        {loadErrors.length > 0 && (
-          <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-            <div className="flex items-start gap-2">
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-              <div>
-                <p className="font-semibold">
-                  Certaines donnees Growth n'ont pas pu se charger
-                </p>
-                <p className="mt-1 text-amber-800">
-                  La page reste utilisable, mais il faut verifier les migrations
-                  Supabase ou les logs serveur.
-                </p>
-                <ul className="mt-2 space-y-1 text-xs text-amber-800">
-                  {loadErrors.slice(0, 4).map((error) => (
-                    <li key={error}>{error}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Stats cards */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
@@ -408,7 +384,7 @@ export function GrowthView({
                   {channels.map((ch) => (
                     <option key={ch.id} value={ch.id}>
                       {ch.display_name || ch.username || ch.late_account_id} (
-                      {getPlatformLabel(ch.platform)})
+                      {platformLabels[ch.platform]})
                     </option>
                   ))}
                 </select>
@@ -598,7 +574,7 @@ export function GrowthView({
 
             <div className="mt-4 space-y-3">
               {triggers.map((trigger) => {
-                const config = safeTriggerConfig(trigger.config);
+                const config = trigger.config as unknown as TriggerConfig;
                 const channel = channels.find(
                   (c) => c.id === trigger.channel_id
                 );
@@ -638,7 +614,7 @@ export function GrowthView({
                             <span className="text-xs text-muted-foreground">
                               {channel.display_name ||
                                 channel.username ||
-                                getPlatformLabel(channel.platform)}
+                                platformLabels[channel.platform]}
                             </span>
                           )}
 
@@ -756,13 +732,7 @@ export function GrowthView({
                       Correspondance
                     </th>
                     <th className="px-4 py-3 text-xs font-medium text-muted-foreground">
-                      Réponse publique
-                    </th>
-                    <th className="px-4 py-3 text-xs font-medium text-muted-foreground">
-                      DM privé
-                    </th>
-                    <th className="px-4 py-3 text-xs font-medium text-muted-foreground">
-                      Diagnostic
+                      DM
                     </th>
                     <th className="px-4 py-3 text-xs font-medium text-muted-foreground">
                       Heure
@@ -800,31 +770,21 @@ export function GrowthView({
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        <StatusPill ok={log.reply_sent} labelOk="Envoyee" labelKo="Non" />
-                      </td>
-                      <td className="px-4 py-3">
-                        <StatusPill
-                          ok={log.dm_sent}
-                          labelOk="Envoye"
-                          labelKo={log.error ? "Erreur" : "Non"}
-                          error={Boolean(log.error)}
-                        />
-                      </td>
-                      <td className="max-w-sm px-4 py-3">
-                        {log.error ? (
-                          <div className="flex items-start gap-2 rounded-lg bg-red-50 px-2.5 py-2 text-xs text-red-700">
-                            <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                            <span className="line-clamp-3 break-words" title={log.error}>
-                              {friendlyCommentError(log.error)}
-                            </span>
-                          </div>
-                        ) : log.dm_sent || log.reply_sent ? (
-                          <div className="flex items-center gap-1.5 text-xs text-emerald-700">
-                            <CheckCircle2 className="h-3.5 w-3.5" />
-                            OK
-                          </div>
+                        {log.dm_sent ? (
+                          <span className="inline-flex rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700">
+                            Envoyé
+                          </span>
+                        ) : log.error ? (
+                          <span
+                            className="inline-flex rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-medium text-red-700"
+                            title={log.error}
+                          >
+                            Erreur
+                          </span>
                         ) : (
-                          <span className="text-xs text-muted-foreground/60">--</span>
+                          <span className="text-xs text-muted-foreground/60">
+                            --
+                          </span>
                         )}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-xs text-muted-foreground/60">
@@ -867,113 +827,6 @@ function StatCard({
       </p>
     </div>
   );
-}
-
-function safeTriggerConfig(config: Json): TriggerConfig {
-  if (!config || typeof config !== "object" || Array.isArray(config)) {
-    return { keywords: [] };
-  }
-
-  const record = config as Record<string, unknown>;
-  const keywords = Array.isArray(record.keywords)
-    ? record.keywords.flatMap((keyword) => {
-        if (typeof keyword === "string") {
-          return [{ value: keyword, matchType: "contains" as const }];
-        }
-
-        if (!keyword || typeof keyword !== "object") {
-          return [];
-        }
-
-        const keywordRecord = keyword as Record<string, unknown>;
-        if (typeof keywordRecord.value !== "string") {
-          return [];
-        }
-
-        return [
-          {
-            value: keywordRecord.value,
-            matchType: isMatchType(keywordRecord.matchType)
-              ? keywordRecord.matchType
-              : ("contains" as const),
-          },
-        ];
-      })
-    : [];
-
-  const postIds = Array.isArray(record.postIds)
-    ? record.postIds.filter((postId): postId is string => typeof postId === "string")
-    : undefined;
-
-  return {
-    keywords,
-    ...(postIds?.length ? { postIds } : {}),
-    ...(typeof record.replyText === "string" && record.replyText.trim()
-      ? { replyText: record.replyText }
-      : {}),
-  };
-}
-
-function isMatchType(value: unknown): value is "exact" | "contains" | "startsWith" {
-  return value === "exact" || value === "contains" || value === "startsWith";
-}
-
-function getPlatformLabel(platform: unknown): string {
-  if (typeof platform !== "string") {
-    return "Canal inconnu";
-  }
-
-  return platformLabels[platform as Platform] ?? platform;
-}
-
-function StatusPill({
-  ok,
-  labelOk,
-  labelKo,
-  error,
-}: {
-  ok: boolean;
-  labelOk: string;
-  labelKo: string;
-  error?: boolean;
-}) {
-  if (ok) {
-    return (
-      <span className="inline-flex rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700">
-        {labelOk}
-      </span>
-    );
-  }
-
-  return (
-    <span
-      className={cn(
-        "inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium",
-        error
-          ? "bg-red-100 text-red-700"
-          : "bg-muted text-muted-foreground"
-      )}
-    >
-      {labelKo}
-    </span>
-  );
-}
-
-function friendlyCommentError(error: string) {
-  const lower = error.toLowerCase();
-  if (lower.includes("older than 7 days")) {
-    return "DM impossible: le commentaire a plus de 7 jours. Meta autorise le private reply seulement pendant 7 jours.";
-  }
-  if (lower.includes("already") && lower.includes("private reply")) {
-    return "DM impossible: Meta autorise un seul private reply par commentaire.";
-  }
-  if (lower.includes("no outbound dm")) {
-    return "Aucun DM envoye par le flow. Verifiez le noeud privateReply et les diagnostics.";
-  }
-  if (lower.includes("message") && lower.includes("required")) {
-    return "DM impossible: le message du noeud est vide.";
-  }
-  return error;
 }
 
 function formatRelativeTime(dateStr: string): string {

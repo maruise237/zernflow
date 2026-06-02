@@ -10,13 +10,13 @@ export default async function GrowthPage() {
 
   // Run ALL queries in parallel - no waterfalls
   const [
-    channelsResult,
-    triggersResult,
-    flowsResult,
-    totalCommentsResult,
-    matchedCommentsResult,
-    dmsSentResult,
-    recentLogsResult,
+    { data: channels },
+    { data: allTriggers },
+    { data: flows },
+    { count: totalComments },
+    { count: matchedComments },
+    { count: dmsSent },
+    { data: recentLogs },
   ] = await Promise.all([
     supabase
       .from("channels")
@@ -61,30 +61,18 @@ export default async function GrowthPage() {
       .limit(20),
   ]);
 
-  const loadErrors = [
-    channelsResult.error && `Canaux: ${channelsResult.error.message}`,
-    triggersResult.error && `Regles: ${triggersResult.error.message}`,
-    flowsResult.error && `Flows: ${flowsResult.error.message}`,
-    totalCommentsResult.error &&
-      `Commentaires traites: ${totalCommentsResult.error.message}`,
-    matchedCommentsResult.error &&
-      `Correspondances: ${matchedCommentsResult.error.message}`,
-    dmsSentResult.error && `DM envoyes: ${dmsSentResult.error.message}`,
-    recentLogsResult.error && `Activite recente: ${recentLogsResult.error.message}`,
-  ].filter((error): error is string => Boolean(error));
-
   return (
     <GrowthView
-      channels={channelsResult.data ?? []}
-      triggers={triggersResult.data ?? []}
-      flows={flowsResult.data ?? []}
+      workspaceId={workspace.id}
+      channels={channels ?? []}
+      triggers={allTriggers ?? []}
+      flows={flows ?? []}
       stats={{
-        totalComments: totalCommentsResult.count ?? 0,
-        matchedComments: matchedCommentsResult.count ?? 0,
-        dmsSent: dmsSentResult.count ?? 0,
+        totalComments: totalComments ?? 0,
+        matchedComments: matchedComments ?? 0,
+        dmsSent: dmsSent ?? 0,
       }}
-      recentLogs={recentLogsResult.data ?? []}
-      loadErrors={loadErrors}
+      recentLogs={recentLogs ?? []}
     />
   );
 }

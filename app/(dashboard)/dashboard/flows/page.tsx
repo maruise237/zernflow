@@ -49,7 +49,7 @@ export default async function FlowsPage() {
   ]);
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex h-full min-h-0 flex-col bg-transparent">
       <div className="shrink-0 border-b border-border bg-background/70 px-8 py-6 backdrop-blur">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -71,7 +71,7 @@ export default async function FlowsPage() {
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-8 py-6">
+      <div className="min-h-0 flex-1 overflow-y-auto bg-background/35 px-8 py-6">
       {(channelCount ?? 0) === 0 && (
         <div className="mt-6 flex items-center gap-4 rounded-xl border border-dashed border-border bg-card p-5 shadow-sm shadow-black/5">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">

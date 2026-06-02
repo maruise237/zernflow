@@ -21,7 +21,7 @@ export default async function DashboardLayout({
     .filter((w) => w.id);
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.14),transparent_34rem),linear-gradient(180deg,#f8fbff_0%,#eef4ff_100%)] dark:bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.16),transparent_30rem),linear-gradient(180deg,#111827_0%,#0f172a_100%)]">
+    <div className="dashboard-shell flex h-dvh overflow-hidden">
       <Sidebar workspace={workspace} user={user} workspaces={workspaces} />
       <main id="main-content" className="min-h-0 min-w-0 flex-1 overflow-hidden pb-20 md:pb-0">
         {children}

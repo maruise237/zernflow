@@ -50,7 +50,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.16),transparent_34rem),linear-gradient(135deg,#f8fbff_0%,#eef4ff_55%,#ffffff_100%)] px-4 py-10 dark:bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.16),transparent_32rem),linear-gradient(135deg,#111827_0%,#0f172a_100%)]">
+    <div className="auth-shell flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
       <div className="grid w-full max-w-5xl overflow-hidden rounded-2xl border border-border bg-card/90 shadow-2xl shadow-blue-950/10 backdrop-blur-xl lg:grid-cols-[1.05fr_0.95fr]">
         <aside className="hidden border-r border-white/10 bg-primary p-10 text-primary-foreground lg:flex lg:flex-col lg:justify-between">
           <Link href="/" className="flex items-center gap-3">

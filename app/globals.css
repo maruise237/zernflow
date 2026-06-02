@@ -57,6 +57,12 @@
   --sidebar-accent: oklch(0.94 0.026 255);
   --sidebar-accent-foreground: oklch(0.24 0.05 255);
   --sidebar-border: oklch(0.895 0.014 255);
+  --dashboard-background:
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.14), transparent 34rem),
+    linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
+  --auth-background:
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.16), transparent 34rem),
+    linear-gradient(135deg, #f8fbff 0%, #eef4ff 55%, #ffffff 100%);
 }
 
 .dark {
@@ -84,6 +90,12 @@
   --sidebar-accent: oklch(0.28 0.05 255);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.34 0.035 255);
+  --dashboard-background:
+    radial-gradient(circle at top left, rgba(59, 130, 246, 0.16), transparent 30rem),
+    linear-gradient(180deg, #111827 0%, #0f172a 100%);
+  --auth-background:
+    radial-gradient(circle at top left, rgba(59, 130, 246, 0.16), transparent 32rem),
+    linear-gradient(135deg, #111827 0%, #0f172a 100%);
 }
 
 @layer base {
@@ -111,6 +123,14 @@
 
   .control-base {
     @apply min-h-11 rounded-lg transition-colors duration-200;
+  }
+
+  .dashboard-shell {
+    background: var(--dashboard-background);
+  }
+
+  .auth-shell {
+    background: var(--auth-background);
   }
 }
 

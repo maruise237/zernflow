@@ -28,6 +28,7 @@ export function WorkspaceSwitcher({
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
   const [switching, setSwitching] = useState<string | null>(null);
+  const [error, setError] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -38,6 +39,7 @@ export function WorkspaceSwitcher({
         setOpen(false);
         setCreating(false);
         setNewName("");
+        setError("");
       }
     }
     if (open) document.addEventListener("mousedown", handleClick);
@@ -55,12 +57,17 @@ export function WorkspaceSwitcher({
       return;
     }
     setSwitching(workspaceId);
+    setError("");
     try {
-      await fetch("/api/v1/workspaces/switch", {
+      const res = await fetch("/api/v1/workspaces/switch", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ workspaceId }),
       });
+      if (!res.ok) {
+        setError("Impossible de changer d'espace de travail.");
+        return;
+      }
       router.refresh();
       setOpen(false);
     } finally {
@@ -72,6 +79,7 @@ export function WorkspaceSwitcher({
     e.preventDefault();
     if (!newName.trim()) return;
     setSwitching("new");
+    setError("");
     const res = await fetch("/api/v1/workspaces", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -82,6 +90,8 @@ export function WorkspaceSwitcher({
       setOpen(false);
       setCreating(false);
       setNewName("");
+    } else {
+      setError("Impossible de creer cet espace de travail.");
     }
     setSwitching(null);
   }
@@ -89,38 +99,51 @@ export function WorkspaceSwitcher({
   return (
     <div ref={dropdownRef} className="relative">
       <button
+        type="button"
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-sidebar-accent transition-colors"
+        aria-expanded={open}
+        aria-haspopup="menu"
+        className="flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-left transition-all hover:bg-sidebar-accent active:scale-[0.99]"
       >
         <img
           src={avatarUrl(current.id)}
           alt=""
-          className="h-7 w-7 rounded-md"
+          className="h-8 w-8 rounded-lg"
         />
-        <span className="flex-1 truncate text-sm font-semibold text-sidebar-foreground">
-          {current.name}
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-semibold text-sidebar-foreground">
+            {current.name}
+          </span>
+          <span className="block truncate text-[11px] text-sidebar-foreground/50">
+            Espace actif
+          </span>
         </span>
         <ChevronDown
           className={cn(
-            "h-3.5 w-3.5 text-sidebar-foreground/50 transition-transform",
+            "h-3.5 w-3.5 text-sidebar-foreground/50 transition-transform duration-200",
             open && "rotate-180"
           )}
         />
       </button>
 
       {open && (
-        <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-lg border border-border bg-popover p-1 shadow-lg">
+        <div
+          className="absolute left-0 right-0 top-full z-50 mt-2 rounded-xl border border-border/80 bg-popover p-1.5 shadow-xl"
+          role="menu"
+        >
           {/* Workspace list */}
           {workspaces.map((ws) => {
             const isActive = ws.id === current.id;
             const isLoading = switching === ws.id;
             return (
               <button
+                type="button"
                 key={ws.id}
                 onClick={() => handleSwitch(ws.id)}
                 disabled={!!switching}
+                role="menuitem"
                 className={cn(
-                  "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
+                  "flex min-h-10 w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-sm transition-all disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.99]",
                   isActive
                     ? "bg-accent text-accent-foreground"
                     : "text-popover-foreground hover:bg-accent"
@@ -129,7 +152,7 @@ export function WorkspaceSwitcher({
                 <img
                   src={avatarUrl(ws.id, 24)}
                   alt=""
-                  className="h-6 w-6 rounded"
+                  className="h-6 w-6 rounded-md"
                 />
                 <span className="flex-1 truncate text-left">{ws.name}</span>
                 {isLoading ? (
@@ -142,25 +165,32 @@ export function WorkspaceSwitcher({
           })}
 
           {/* Divider */}
-          <div className="my-1 border-t border-border" />
+          <div className="my-1.5 border-t border-border" />
 
           {/* Create workspace */}
           {creating ? (
             <form onSubmit={handleCreate} className="p-1">
+              <label htmlFor="workspace-name" className="sr-only">
+                Nom de l'espace de travail
+              </label>
               <input
+                id="workspace-name"
                 ref={inputRef}
                 type="text"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder="Nom de l'espace de travail"
-                className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-ring"
+                className="min-h-10 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                 disabled={switching === "new"}
               />
+              {error && (
+                <p className="mt-1.5 text-xs text-destructive">{error}</p>
+              )}
               <div className="mt-1.5 flex gap-1.5">
                 <button
                   type="submit"
                   disabled={!newName.trim() || switching === "new"}
-                  className="flex-1 rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground disabled:opacity-50"
+                  className="min-h-9 flex-1 cursor-pointer rounded-lg bg-primary px-2 py-1 text-xs font-medium text-primary-foreground transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.99]"
                 >
                   {switching === "new" ? (
                     <Loader2 className="mx-auto h-3.5 w-3.5 animate-spin" />
@@ -173,8 +203,9 @@ export function WorkspaceSwitcher({
                   onClick={() => {
                     setCreating(false);
                     setNewName("");
+                    setError("");
                   }}
-                  className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-accent"
+                  className="min-h-9 cursor-pointer rounded-lg px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
                 >
                   Annuler
                 </button>
@@ -182,12 +213,17 @@ export function WorkspaceSwitcher({
             </form>
           ) : (
             <button
+              type="button"
               onClick={() => setCreating(true)}
-              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+              role="menuitem"
+              className="flex min-h-10 w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
             >
               <Plus className="h-3.5 w-3.5" />
               Créer un espace de travail
             </button>
+          )}
+          {error && !creating && (
+            <p className="px-2 pb-1 pt-1.5 text-xs text-destructive">{error}</p>
           )}
         </div>
       )}

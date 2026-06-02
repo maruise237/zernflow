@@ -23,7 +23,10 @@ export default async function DashboardLayout({
   return (
     <div className="flex min-h-dvh bg-background md:h-screen">
       <Sidebar workspace={workspace} user={user} workspaces={workspaces} />
-      <main className="min-h-0 min-w-0 flex-1 overflow-hidden pb-20 md:pb-0">
+      <main
+        id="main-content"
+        className="min-h-0 min-w-0 flex-1 overflow-hidden bg-background pb-20 md:pb-0"
+      >
         {children}
       </main>
     </div>

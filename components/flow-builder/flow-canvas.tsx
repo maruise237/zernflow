@@ -50,6 +50,19 @@ const nodeTypes: NodeTypes = {
   condition: ConditionNode,
   delay: DelayNode,
   action: ActionNode,
+  addTag: ActionNode,
+  removeTag: ActionNode,
+  setCustomField: ActionNode,
+  httpRequest: ActionNode,
+  goToFlow: ActionNode,
+  subscribe: ActionNode,
+  unsubscribe: ActionNode,
+  humanTakeover: ActionNode,
+  commentReply: ActionNode,
+  privateReply: ActionNode,
+  abSplit: ActionNode,
+  smartDelay: ActionNode,
+  enrollSequence: ActionNode,
   aiResponse: AiResponseNode,
 };
 
@@ -337,7 +350,7 @@ function FlowCanvasInner({ flow, channels }: FlowCanvasProps) {
     } finally {
       setPublishing(false);
     }
-  }, [saveFlow, flow.id]);
+  }, [saveFlow, flow.id, router]);
 
   return (
     <div className="flex h-full flex-col">

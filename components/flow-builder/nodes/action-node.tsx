@@ -98,6 +98,19 @@ const actionConfig: Record<
   },
 };
 
+const actionNodeTypes = new Set(Object.keys(actionConfig));
+
+function getActionTypeFromProps(props: NodeProps, data: ActionNodeProps) {
+  const nodeType =
+    typeof (props as { type?: unknown }).type === "string"
+      ? ((props as { type: string }).type)
+      : undefined;
+
+  if (data.actionType) return data.actionType;
+  if (nodeType && actionNodeTypes.has(nodeType)) return nodeType as NodeType;
+  return "addTag";
+}
+
 function getSummary(nodeData: ActionNodeProps): string | null {
   const type = nodeData.actionType;
   if (!type) return null;
@@ -140,9 +153,11 @@ function getSummary(nodeData: ActionNodeProps): string | null {
   }
 }
 
-export function ActionNode({ data, selected }: NodeProps) {
+export function ActionNode(props: NodeProps) {
+  const { data, selected } = props;
   const nodeData = data as ActionNodeProps;
-  const actionType = nodeData.actionType || "addTag";
+  const actionType = getActionTypeFromProps(props, nodeData);
+  const normalizedNodeData = { ...nodeData, actionType };
   const config = actionConfig[actionType] || {
     icon: Cog,
     label: "Action",
@@ -150,7 +165,7 @@ export function ActionNode({ data, selected }: NodeProps) {
   };
   const Icon = config.icon;
   const label = nodeData.label || config.label;
-  const summary = getSummary(nodeData);
+  const summary = getSummary(normalizedNodeData);
 
   const isAbSplit = actionType === "abSplit";
   const paths = isAbSplit ? nodeData.paths || [] : [];

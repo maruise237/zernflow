@@ -60,8 +60,25 @@ const nodeTypeConfig: Record<string, { label: string; icon: typeof Cog; color: s
   },
 };
 
+const actionNodeTypes = new Set([
+  "addTag",
+  "removeTag",
+  "setCustomField",
+  "httpRequest",
+  "goToFlow",
+  "subscribe",
+  "unsubscribe",
+  "humanTakeover",
+  "commentReply",
+  "privateReply",
+  "abSplit",
+  "smartDelay",
+  "enrollSequence",
+]);
+
 export function NodeConfigSidebar({ node, onChange, onClose, onDelete, channels }: NodeConfigSidebarProps) {
-  const nodeType = node.type || "action";
+  const rawNodeType = node.type || "action";
+  const nodeType = actionNodeTypes.has(rawNodeType) ? "action" : rawNodeType;
   const config = nodeTypeConfig[nodeType] || nodeTypeConfig.action;
   const Icon = config.icon;
 
@@ -91,7 +108,10 @@ export function NodeConfigSidebar({ node, onChange, onClose, onDelete, channels 
   );
 
   function renderPanel() {
-    const data = node.data as Record<string, unknown>;
+    const data = {
+      ...(node.data as Record<string, unknown>),
+      ...(nodeType === "action" && rawNodeType !== "action" ? { actionType: rawNodeType } : {}),
+    };
     switch (nodeType) {
       case "trigger":
         return <TriggerPanel data={data} channels={channels} onChange={handleChange} />;

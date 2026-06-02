@@ -409,13 +409,17 @@ async function executeNode(
       return executeDelay(supabase, node.data as DelayNodeData, sessionId, node.id, context);
     case "addTag":
     case "removeTag":
-      return executeTag(supabase, node.data as TagNodeData, context);
+      return executeTag(
+        supabase,
+        normalizeTagNodeData(nodeType, node.data as Partial<TagNodeData> & { actionType?: string }),
+        context
+      );
     case "setCustomField":
       return executeSetField(supabase, node.data as SetFieldNodeData, context);
     case "httpRequest":
       return executeHttpRequest(node.data as HttpRequestNodeData, context);
     case "goToFlow":
-      return executeGoToFlow(supabase, node.data as GoToFlowNodeData, context, sessionId);
+      return executeGoToFlow(supabase, node.data as GoToFlowNodeData, context);
     case "humanTakeover":
       return executeHumanTakeover(supabase, context, sessionId);
     case "subscribe":
@@ -441,6 +445,19 @@ async function executeNode(
     default:
       return;
   }
+}
+
+function normalizeTagNodeData(
+  nodeType: FlowNode["type"],
+  data: Partial<TagNodeData> & { actionType?: string }
+): TagNodeData {
+  const actionType = data.actionType || nodeType;
+  const action = data.action || (actionType === "removeTag" ? "remove" : "add");
+
+  return {
+    action,
+    tagName: data.tagName || "",
+  };
 }
 
 async function executeSendMessage(
@@ -883,8 +900,7 @@ async function executeHttpRequest(
 async function executeGoToFlow(
   supabase: SupabaseClient<Database>,
   data: GoToFlowNodeData,
-  context: FlowExecutionContext,
-  _sessionId: string
+  context: FlowExecutionContext
 ) {
   // Execute the target flow
   await executeFlow(supabase, {
